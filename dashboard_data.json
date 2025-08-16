@@ -1,0 +1,26 @@
+{
+    "dashboard_data": [
+        {
+            "TrainingID": "Ana (CNIC: 38303-8769643-2)_16Aug2025",
+            "Training_Date": "2025-08-16T06:29:24.314Z",
+            "Province": "Punjab",
+            "District": "Mianwali",
+            "ASPC_Name": "38303-8769643-2",
+            "Beneficiary_Count_Actual": 2,
+            "Female_Beneficiaries": 2,
+            "Retention_Rate_Pct": 100.0,
+            "Quality_Index": 1.0,
+            "Avg_Training_Time_Hours": 0.1,
+            "Female_Occupations": {
+                "Housewife": 1,
+                "Working Women": 1
+            },
+            "Start_Location_Lat": 33.6461824,
+            "Start_Location_Lon": 73.0529792
+        }
+    ],
+    "metadata": {
+        "TOTAL_PROJECT_TARGET_BENEFICIARIES": 250000,
+        "MONTHLY_TARGET_PER_TRAINER": 256.0
+    }
+}

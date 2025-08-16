@@ -391,7 +391,7 @@
     <div class="dashboard-grid">
         <header class="card header flex flex-row items-center justify-between !py-2">
             <div class="flex items-center gap-4">
-                <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-6">
+                <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-10">
             </div>
 
             <div class="flex items-center justify-center gap-6 flex-grow">
@@ -414,7 +414,7 @@
                 </div>
             </div>
 
-            <img src="https://resume.brightspyre.com/affiliates/INTERACT%20Consulting/Giz%20pic-6493ec850de4e.png" alt="DFLT Logo" class="h-10">
+            <img src="https://resume.brightspyre.com/affiliates/INTERACT%20Consulting/Giz%20pic-6493ec850de4e.png" alt="DFLT Logo" class="h-12">
         </header>
 
         <div class="card map-card !p-1 relative">
@@ -425,21 +425,27 @@
         </div>
         
         <div class="kpi-main">
-            <div class="card justify-center">
-                <h3 class="text-sm font-medium text-gray-600 flex items-center justify-between">
+            <div class="card flex-col items-start">
+                <h3 class="text-sm font-medium text-gray-600 flex items-center justify-between w-full">
                     <span>Total Beneficiaries Trained</span>
                     <span id="beneficiariesTargetPct" class="text-xs font-semibold text-teal-500">0%</span>
                 </h3>
                 <p id="totalBeneficiaries" class="text-4xl font-black text-indigo-600">0</p>
-                <span class="text-xs text-gray-500">Target: <span id="beneficiaryOverallTarget">0</span></span>
+                <div class="flex items-center justify-between w-full mt-2">
+                    <span class="text-xs text-gray-500">Target: <span id="beneficiaryOverallTarget">0</span></span>
+                    <div class="w-1/2 h-10 ml-auto"><canvas id="beneficiariesMiniChart"></canvas></div>
+                </div>
             </div>
-            <div class="card justify-center">
-                <h3 class="text-sm font-medium text-gray-600 flex items-center justify-between">
+            <div class="card flex-col items-start">
+                <h3 class="text-sm font-medium text-gray-600 flex items-center justify-between w-full">
                     <span>Total Trainings Conducted</span>
                     <span id="trainingsTargetPct" class="text-xs font-semibold text-emerald-500">0%</span>
                 </h3>
                 <p id="totalTrainings" class="text-4xl font-black text-indigo-600">0</p>
-                <span class="text-xs text-gray-500">Target: <span id="trainingOverallTarget">0</span></span>
+                <div class="flex items-center justify-between w-full mt-2">
+                    <span class="text-xs text-gray-500">Target: <span id="trainingOverallTarget">0</span></span>
+                    <div class="w-1/2 h-10 ml-auto"><canvas id="trainingsMiniChart"></canvas></div>
+                </div>
             </div>
             <div class="card justify-center col-span-1">
                 <h3 class="text-sm font-medium text-gray-600">Top Performing Province</h3>
@@ -523,6 +529,10 @@
         let leaderboardData = [];
         let districtDataSummary = {};
 
+        // Mini chart instances
+        let beneficiariesMiniChart, trainingsMiniChart;
+        let occupationsPieChart;
+
         const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTakZtvQeYjOMxvYbL91Ar8L99Ej3t2hZw2xJjFSqg0HLbaWrVyI7-bc4sS9A4RO4pgCH365J2OcRLt/pub?gid=317105383&single=true&output=csv';
         const TOTAL_PROJECT_TARGET_BENEFICIARIES = 250000;
         const MONTHLY_TARGET_PER_TRAINER = 256;
@@ -600,7 +610,7 @@
             const lines = csvText.trim().split('\n');
             const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
             const dataRows = lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/"/g, ''));
                 const row = {};
                 headers.forEach((header, i) => {
                     row[header] = values[i] || '';
@@ -990,7 +1000,7 @@
             let overallTrainingTarget = 0;
 
             if (currentFilterProvince === 'All') {
-                overallBeneficiaryTarget = dashboardMetadata.TOTAL_PROJECT_TARGET_BENEFICIARIES;
+                overallBeneficiaryTarget = TOTAL_PROJECT_TARGET_BENEFICIARIES;
                 overallTrainingTarget = Object.values(globalTargets.provinces).reduce((sum, p) => sum + p.target_trainings, 0);
             } else {
                 const provinceData = globalTargets.provinces[currentFilterProvince];
@@ -1026,6 +1036,44 @@
             }
             document.getElementById('topProvinceName').textContent = topProvince || 'N/A';
             document.getElementById('topProvincePct').textContent = `${maxProvinceAchievedPct.toFixed(1)}% Target Achieved`;
+
+            // Update mini trend charts
+            updateMiniTrendCharts(data);
+        }
+
+        /**
+         * Updates the mini trend charts in the KPI cards.
+         * @param {Array<Object>} data - The filtered training data.
+         */
+        function updateMiniTrendCharts(data) {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const filteredData = data.filter(item => new Date(item.Training_Date) >= thirtyDaysAgo);
+
+            const dailyBeneficiaries = {};
+            const dailyTrainings = {};
+            
+            filteredData.forEach(item => {
+                const dateKey = item.Training_Date;
+                dailyBeneficiaries[dateKey] = (dailyBeneficiaries[dateKey] || 0) + (item.Beneficiary_Count_Actual || 0);
+                dailyTrainings[dateKey] = (dailyTrainings[dateKey] || 0) + 1;
+            });
+
+            const labels = Object.keys(dailyBeneficiaries).sort();
+            const beneficiaryData = labels.map(key => dailyBeneficiaries[key]);
+            const trainingData = labels.map(key => dailyTrainings[key]);
+
+            if (beneficiariesMiniChart) {
+                beneficiariesMiniChart.data.labels = labels;
+                beneficiariesMiniChart.data.datasets[0].data = beneficiaryData;
+                beneficiariesMiniChart.update();
+            }
+
+            if (trainingsMiniChart) {
+                trainingsMiniChart.data.labels = labels;
+                trainingsMiniChart.data.datasets[0].data = trainingData;
+                trainingsMiniChart.update();
+            }
         }
 
         /**
@@ -1081,12 +1129,13 @@
                 return;
             }
 
-            const occupationsList = Object.entries(provinceData.female_occupations)
-                .sort(([, a], [, b]) => b - a)
-                .map(([occupation, count]) => `<li class="flex items-center justify-between text-sm py-1 border-b last:border-b-0 border-gray-200">
-                    <span>${occupation}:</span>
-                    <span class="font-bold text-gray-800">${count}</span>
-                </li>`).join('');
+            // Create occupations data for the pie chart
+            const occupationLabels = Object.keys(provinceData.female_occupations);
+            const occupationData = Object.values(provinceData.female_occupations);
+            const totalOccupations = occupationData.reduce((sum, val) => sum + val, 0);
+
+            // Dynamically generate a visually appealing color palette for the pie chart
+            const dynamicColors = occupationLabels.map((_, i) => `hsl(${i * 60}, 70%, 50%)`);
 
             provincialSummaryContent.innerHTML = `
                 <div class="grid grid-cols-2 gap-4">
@@ -1108,14 +1157,69 @@
                     </div>
                 </div>
 
-                <div class="mt-6 p-4 bg-white rounded-lg shadow-sm">
+                <div class="mt-6 p-4 bg-white rounded-lg shadow-sm flex-grow">
                     <h4 class="text-lg font-bold text-gray-800 mb-2">Top Occupations</h4>
-                    <ul class="list-none space-y-1">
-                        ${occupationsList || '<li class="text-center text-gray-500">No occupation data available.</li>'}
-                    </ul>
+                    <div class="chart-container h-full w-full flex items-center justify-center">
+                        ${totalOccupations > 0 ? '<canvas id="occupationsPieChart"></canvas>' : '<p class="text-gray-500 text-sm text-center">No occupation data available.</p>'}
+                    </div>
                 </div>
             `;
+            if (totalOccupations > 0) {
+                renderOccupationsPieChart(occupationLabels, occupationData, dynamicColors);
+            }
         }
+
+        /**
+         * Renders the pie chart for occupations.
+         */
+        function renderOccupationsPieChart(labels, data, colors) {
+            const ctx = document.getElementById('occupationsPieChart').getContext('2d');
+            if (occupationsPieChart) {
+                occupationsPieChart.destroy();
+            }
+            occupationsPieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    family: 'Montserrat'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            titleFont: { family: 'Montserrat' },
+                            bodyFont: { family: 'Montserrat' },
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
 
         /**
          * Initializes the Chart.js instances.
@@ -1157,12 +1261,22 @@
                     datasets: [{
                         data: [],
                         borderWidth: 2,
-                        tension: 0.3,
+                        tension: 0.4, // Increased tension for a smoother line
                         pointRadius: 3,
                         pointBackgroundColor: '#4f46e5',
                         borderColor: '#4f46e5',
-                        fill: 'start',
-                        backgroundColor: 'rgba(79, 70, 229, 0.1)'
+                        fill: true,
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) {
+                                return null;
+                            }
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(79, 70, 229, 0)');
+                            gradient.addColorStop(1, 'rgba(79, 70, 229, 0.4)');
+                            return gradient;
+                        }
                     }]
                 },
                 options: {
@@ -1181,6 +1295,55 @@
                         }
                     }
                 }
+            });
+
+            // Mini chart options
+            const miniChartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                elements: { point: { radius: 0 } },
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                },
+                layout: {
+                    padding: { top: 0, bottom: 0, left: 0, right: 0 }
+                }
+            };
+
+            // Initialize Beneficiaries Mini Chart
+            const beneficiariesCtx = document.getElementById('beneficiariesMiniChart').getContext('2d');
+            beneficiariesMiniChart = new Chart(beneficiariesCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        borderColor: '#2dd4bf',
+                        borderWidth: 1.5,
+                        tension: 0.6,
+                        fill: false
+                    }]
+                },
+                options: miniChartOptions
+            });
+
+            // Initialize Trainings Mini Chart
+            const trainingsCtx = document.getElementById('trainingsMiniChart').getContext('2d');
+            trainingsMiniChart = new Chart(trainingsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        borderColor: '#34d399',
+                        borderWidth: 1.5,
+                        tension: 0.6,
+                        fill: false
+                    }]
+                },
+                options: miniChartOptions
             });
         }
 
@@ -1214,7 +1377,7 @@
             monthlyTrendChart.options.scales.x.time.unit = unit;
             
             // Set the target line value
-            let currentTargetValue = (unit === 'day') ? (dashboardMetadata.TOTAL_PROJECT_TARGET_BENEFICIARIES / 8) / 30.4 : (dashboardMetadata.TOTAL_PROJECT_TARGET_BENEFICIARIES / 8);
+            let currentTargetValue = (unit === 'day') ? (TOTAL_PROJECT_TARGET_BENEFICIARIES / 8) / 30.4 : (TOTAL_PROJECT_TARGET_BENEFICIARIES / 8);
             monthlyTrendChart.options.plugins.annotation.annotations.targetLine.value = currentTargetValue;
             monthlyTrendChart.options.plugins.annotation.annotations.targetLine.label.content = `Target: ${currentTargetValue.toFixed(0)}`;
             
@@ -1344,10 +1507,9 @@
             // Update the table header
             rankingTable.querySelector('thead').innerHTML = tableHeaderHTML;
 
-            if (sortedData.length === 0 && sortMetric !== 'district') {
-                tableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-2 text-center text-gray-500">No provincial data.</td></tr>`;
-            } else if (sortedData.length === 0 && sortMetric === 'district') {
-                 tableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-2 text-center text-gray-500">No district data.</td></tr>`;
+            if ((sortMetric !== 'district' && sortedData.length === 0) || (sortMetric === 'district' && Object.keys(districtDataSummary).length === 0)) {
+                const colspan = sortMetric === 'district' ? 4 : 5;
+                tableBody.innerHTML = `<tr><td colspan="${colspan}" class="px-4 py-2 text-center text-gray-500">No data available.</td></tr>`;
             }
         }
         

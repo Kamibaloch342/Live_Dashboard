@@ -521,7 +521,11 @@
         let aggregatedDailyTrendData = {};
         let provincialRankingsData = [];
         let leaderboardData = [];
-        let districtDataSummary = {}; // New data structure for district-level aggregation
+        let districtDataSummary = {};
+
+        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTakZtvQeYjOMxvYbL91Ar8L99Ej3t2hZw2xJjFSqg0HLbaWrVyI7-bc4sS9A4RO4pgCH365J2OcRLt/pub?gid=317105383&single=true&output=csv';
+        const TOTAL_PROJECT_TARGET_BENEFICIARIES = 250000;
+        const MONTHLY_TARGET_PER_TRAINER = 256;
 
         // Define provincial targets for calculations
         let globalTargets = {
@@ -547,21 +551,24 @@
         let map, markers, heatLayer, monthlyTrendChart;
 
         /**
-         * Fetches data from the JSON file and initializes the dashboard.
+         * Fetches data from the Google Sheet CSV and initializes the dashboard.
          * This is the main entry point for the application.
          */
         async function loadDataAndInitialize() {
             try {
-                const response = await fetch('dashboard_data.json');
+                const response = await fetch(GOOGLE_SHEET_CSV_URL);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch dashboard_data.json.');
+                    throw new Error('Failed to fetch data from Google Sheets. Please ensure the link is correct and the sheet is published to the web.');
                 }
-                const data = await response.json();
-                trainingData = data.dashboard_data;
-                dashboardMetadata = data.metadata;
+                const rawCsv = await response.text();
+                
+                // Process the raw CSV data into our dashboard's structured format
+                const processedData = processCSVData(rawCsv);
+                trainingData = processedData.dashboard_data;
+                dashboardMetadata = processedData.metadata;
                 
                 if (!trainingData || trainingData.length === 0) {
-                    throw new Error("Dashboard data is missing or empty!");
+                    throw new Error("Dashboard data is missing or empty after processing.");
                 }
                 
                 // Pre-process all data for fast dashboard rendering
@@ -581,6 +588,135 @@
                 // Display a user-friendly error message
                 alert("An error occurred while loading dashboard data. Please check the console for details.");
             }
+        }
+        
+        /**
+         * Parses the raw CSV string and processes it into the structured JSON format
+         * that the dashboard expects. This replaces the Python script.
+         * @param {string} csvText - The raw CSV content from the Google Sheet.
+         * @returns {object} - An object containing the processed data and metadata.
+         */
+        function processCSVData(csvText) {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const dataRows = lines.slice(1).map(line => {
+                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                const row = {};
+                headers.forEach((header, i) => {
+                    row[header] = values[i] || '';
+                });
+                return row;
+            });
+
+            // Separate Day 1 and Day 2 data
+            const day1Data = dataRows.filter(row => row.main_menu === 'day1');
+            const day2Data = dataRows.filter(row => row.main_menu === 'day2');
+
+            // Map Day 2 attendance CNICs for quick lookup
+            const day2Attendance = new Map();
+            day2Data.forEach(row => {
+                const sessionId = row.day2_session_select;
+                if (sessionId) {
+                    const cnicList = new Set(row.beneficiaries_present.split(' ').filter(c => c.trim() !== ''));
+                    day2Attendance.set(sessionId, cnicList);
+                }
+            });
+
+            const dashboardRecords = [];
+            const sessionsMap = new Map();
+            
+            day1Data.forEach(row => {
+                const sessionId = row.session_id;
+                if (!sessionId) return;
+                
+                if (!sessionsMap.has(sessionId)) {
+                    sessionsMap.set(sessionId, {
+                        ...row,
+                        beneficiaries: [],
+                        female_occupations: {}
+                    });
+                }
+                
+                for (let i = 1; i <= 36; i++) {
+                    const cnicCol = `beneficiary_cnic_${i}`;
+                    const nameCol = `beneficiary_name_${i}`;
+                    const occupationCol = `occupation_${i}`;
+
+                    const cnic = row[cnicCol];
+                    const name = row[nameCol];
+                    const occupation = row[occupationCol];
+
+                    if (cnic) {
+                        const standardizedCnic = cnic.replace(/[^0-9]/g, '');
+                        const hasAttendedDay2 = day2Attendance.get(sessionId)?.has(standardizedCnic) || false;
+                        
+                        sessionsMap.get(sessionId).beneficiaries.push({
+                            cnic: standardizedCnic,
+                            name: name,
+                            occupation: occupation,
+                            attended_day2: hasAttendedDay2
+                        });
+                        
+                        // Aggregate female occupations directly as all are female
+                        if (occupation) {
+                             sessionsMap.get(sessionId).female_occupations[occupation] = (sessionsMap.get(sessionId).female_occupations[occupation] || 0) + 1;
+                        }
+                    }
+                }
+            });
+
+            sessionsMap.forEach(session => {
+                const beneficiaryCount = session.beneficiaries.length;
+                
+                // Calculate retention rate
+                const attendedDay2Count = session.beneficiaries.filter(b => b.attended_day2).length;
+                const retentionRate = beneficiaryCount > 0 ? (attendedDay2Count / beneficiaryCount) * 100 : 0;
+                
+                // Calculate average training time
+                let avgTrainingTimeHours = 0;
+                try {
+                    const startTime = new Date(`1970-01-01T${session.start.match(/\d{2}:\d{2}:\d{2}/)[0]}`);
+                    const endTime = new Date(`1970-01-01T${session.end.match(/\d{2}:\d{2}:\d{2}/)[0]}`);
+                    const durationMs = endTime - startTime;
+                    avgTrainingTimeHours = durationMs / (1000 * 60 * 60);
+                } catch (e) {}
+
+                // Calculate quality index
+                const qualityScore = parseFloat(session.q_read_write || 0) + parseFloat(session.q_recognize_currency || 0) + parseFloat(session.q_simple_math || 0);
+                const qualityIndex = qualityScore / 3;
+
+                // Extract location
+                let lat = null, lon = null;
+                const locationMatch = session.training_location.match(/(\-?\d+\.\d+)\s(\-?\d+\.\d+)/);
+                if (locationMatch) {
+                    lat = parseFloat(locationMatch[1]);
+                    lon = parseFloat(locationMatch[2]);
+                }
+                
+                dashboardRecords.push({
+                    TrainingID: session.session_id,
+                    Training_Date: session.SubmissionDate,
+                    Province: session.province_select,
+                    District: session.district_select,
+                    ASPC_Name: session.lead_trainer_name,
+                    Beneficiary_Count_Actual: beneficiaryCount,
+                    Female_Beneficiaries: beneficiaryCount, // All are female
+                    Retention_Rate_Pct: parseFloat(retentionRate.toFixed(2)),
+                    Avg_Training_Time_Hours: parseFloat(avgTrainingTimeHours.toFixed(1)),
+                    Female_Occupations: session.female_occupations,
+                    Quality_Index: parseFloat(qualityIndex.toFixed(2)),
+                    Start_Location_Lat: lat,
+                    Start_Location_Lon: lon,
+                });
+            });
+
+            return {
+                dashboard_data: dashboardRecords,
+                metadata: {
+                    TOTAL_PROJECT_TARGET_BENEFICIARIES: TOTAL_PROJECT_TARGET_BENEFICIARIES,
+                    MONTHLY_TARGET_PER_TRAINER: MONTHLY_TARGET_PER_TRAINER
+                }
+            };
         }
 
         /**
@@ -677,7 +813,7 @@
                 return acc;
             }, {});
             leaderboardData = Object.entries(trainerPerformance).map(([name, stats]) => {
-                const percent = Math.min(100, Math.round((stats.beneficiaries / dashboardMetadata.MONTHLY_TARGET_PER_TRAINER) * 100));
+                const percent = Math.min(100, Math.round((stats.beneficiaries / MONTHLY_TARGET_PER_TRAINER) * 100));
                 return { name, beneficiaries: stats.beneficiaries, target_pct: percent };
             }).sort((a, b) => b.beneficiaries - a.beneficiaries).slice(0, 5);
         }
@@ -707,9 +843,20 @@
 
             // Handle map click events to select a province
             document.getElementById('map').addEventListener('click', (event) => {
-                // This is a placeholder for a Leaflet event listener
-                // The actual logic is handled by the `updateDashboard` function
+                let targetElement = event.target;
+                while (targetElement && targetElement !== this && !targetElement.dataset.provinceName) {
+                    targetElement = targetElement.parentNode;
+                }
+                if (targetElement && targetElement.dataset.provinceName) {
+                    const provinceName = targetElement.dataset.provinceName;
+                    document.getElementById('provinceFilter').value = provinceName;
+                    updateDashboard();
+                } else {
+                    document.getElementById('provinceFilter').value = 'All';
+                    updateDashboard();
+                }
             });
+            document.getElementById('toggleHeatmap').addEventListener('click', toggleHeatmap);
         }
         
         /**
@@ -974,7 +1121,7 @@
          * Initializes the Chart.js instances.
          */
         function initializeCharts() {
-            const ticksColor = CHART_COLORS.text, gridColor = '#e5e7eb';
+            const ticksColor = '#212529', gridColor = '#e5e7eb';
             const defaultOptions = {
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
@@ -986,11 +1133,11 @@
                     annotation: {
                         annotations: {
                             targetLine: {
-                                type: 'line', yScaleID: 'y', value: 0, borderColor: CHART_COLORS.danger,
+                                type: 'line', yScaleID: 'y', value: 0, borderColor: '#ef4444',
                                 borderWidth: 2, borderDash: [6, 6],
                                 label: {
                                     content: 'Target', enabled: true, position: 'end',
-                                    color: CHART_COLORS.danger, font: { family: 'Montserrat', size: 10 }
+                                    color: '#ef4444', font: { family: 'Montserrat', size: 10 }
                                 }
                             }
                         }
@@ -1012,8 +1159,8 @@
                         borderWidth: 2,
                         tension: 0.3,
                         pointRadius: 3,
-                        pointBackgroundColor: CHART_COLORS.primary,
-                        borderColor: CHART_COLORS.primary,
+                        pointBackgroundColor: '#4f46e5',
+                        borderColor: '#4f46e5',
                         fill: 'start',
                         backgroundColor: 'rgba(79, 70, 229, 0.1)'
                     }]

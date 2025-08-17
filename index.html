@@ -5,20 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DFLT Phase 2 Dashboard</title>
 
-    <!-- Tailwind CSS for utility classes -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Leaflet for the interactive map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
-    <!-- Chart.js for all graphs and charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 
-    <!-- Google Font (Montserrat) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -26,135 +22,168 @@
     <style>
         /* Custom CSS Variables for easy theme management */
         :root {
-            --bg-color: #f8f9fa;
+            --bg-color: #f0f4f8;
             --card-bg: #ffffff;
-            --border-color: #dee2e6;
-            --text-primary: #212529;
-            --text-secondary: #6c757d;
-            --bar-bg: #e9ecef;
-            
-            /* Custom colors for bar segments */
-            --c-valid: #28a745;
-            --c-fake: #ffc107;
-            --c-age1: #0d6efd;
-            --c-age2: #6f42c1;
-            --c-age3: #17a2b8;
-            --c-age4: #6c757d;
-            --c-training: #0d6efd;
-            --c-handbooks: #20c997;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --brand-color: #4f46e5;
+            --brand-light: #e0e7ff;
+            --gradient-start: #f8fafc;
+            --gradient-end: #eef2f5;
         }
 
         /* Base styles for body and font */
         body {
             font-family: 'Montserrat', sans-serif;
             background-color: var(--bg-color);
-            background-image: linear-gradient(175deg, #f8f9fa 0%, #e9ecef 100%);
+            background-image: linear-gradient(175deg, var(--bg-color) 0%, #dbe7f2 100%);
             color: var(--text-primary);
-            overflow: hidden; /* Prevent scrollbars from showing due to initial animations */
+            overflow: auto;
+            min-height: 100vh;
         }
 
         /* Main dashboard grid layout using CSS Grid */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
-            grid-template-rows: 60px repeat(10, minmax(0, 1fr)); /* Header + 10 rows for content */
-            gap: 1rem;
-            height: 100vh; /* Full viewport height */
-            padding: 1rem;
-            box-sizing: border-box; /* Include padding in element's total width and height */
+            grid-template-rows: 70px repeat(10, minmax(0, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            height: 100vh;
         }
 
         /* Styling for all dashboard cards with animations and shadows */
         .card {
-            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent background */
-            backdrop-filter: blur(10px); /* Frosted glass effect */
-            border-radius: 0.75rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
             border: 1px solid var(--border-color);
-            padding: 1rem;
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
-            animation: fadeIn 0.5s ease-out forwards; /* Fade-in animation */
+            animation: fadeIn 0.5s ease-out forwards;
             color: var(--text-primary);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Soft shadow */
-            min-height: 0; /* Allow cards to shrink as needed */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            min-height: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card:hover {
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            transform: translateY(-5px);
         }
 
-        /* Ensure Montserrat font and correct text color for all relevant elements */
+        /* General font styles */
         h1, h2, h3, h4, p, span, div, label, select, button, table, th, td {
             font-family: 'Montserrat', sans-serif !important;
             color: var(--text-primary);
         }
-        /* Specific color overrides for Tailwind classes to ensure light mode compatibility */
-        .text-white { color: var(--text-primary) !important; }
         .text-gray-400 { color: var(--text-secondary) !important; }
-        .text-gray-200 { color: #374151 !important; }
-        .text-gray-300 { color: #4b5563 !important; }
-        .text-gray-500 { color: var(--text-secondary) !important; }
-        .text-red-400 { color: #ef4444 !important; }
-        .text-yellow-400 { color: #facc15 !important; }
-        .text-indigo-400 { color: #6366f1 !important; }
-        .text-teal-400 { color: #2dd4bf !important; }
-        .text-indigo-300 { color: #818cf8 !important; }
-
+        .text-gray-600 { color: #64748b !important; }
+        .text-indigo-600 { color: var(--brand-color) !important; }
 
         /* Keyframe animation for general fade-in effect */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Welcome Overlay & Animations */
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom right, var(--gradient-start), var(--gradient-end));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .welcome-logo, .welcome-text-1, .welcome-text-2 {
+            opacity: 0;
+            transform: translateY(20px);
+            animation-fill-mode: forwards;
+        }
+
+        .welcome-logo {
+            animation: fadeInSlideUp 1s ease-out;
+            animation-delay: 0.5s;
+        }
+        .welcome-text-1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--brand-color);
+            animation: fadeInSlideUp 1.5s ease-out;
+            animation-delay: 1.5s;
+        }
+        .welcome-text-2 {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            animation: fadeInSlideUp 1.5s ease-out;
+            animation-delay: 2.5s;
+        }
+        @keyframes fadeInSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         /* Grid placement for main sections */
         .header {
-            grid-column: 1 / -1; /* Spans all columns */
-            grid-row: 1; /* First row */
+            grid-column: 1 / -1;
+            grid-row: 1;
             background-color: var(--card-bg);
+            border-radius: 1rem;
+            padding: 1rem 2rem;
         }
         .map-card {
-            grid-column: 1 / 8; /* Spans 7 columns */
-            grid-row: 2 / 8; /* Spans rows 2 to 7 */
+            grid-column: 1 / 8;
+            grid-row: 2 / 8;
             position: relative;
+            padding: 0.75rem;
         }
         .kpi-main {
-            grid-column: 8 / 13; /* Spans 5 columns */
-            grid-row: 2 / 4; /* Spans rows 2 to 3 */
+            grid-column: 8 / 13;
+            grid-row: 2 / 4;
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 columns for KPIs */
-            gap: 1rem;
-            background-color: transparent; /* Remove background for this container */
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            background-color: transparent;
             border: none;
             box-shadow: none;
             padding: 0;
         }
         .kpi-main .card {
-            background-color: rgba(255, 255, 255, 0.9); /* Individual KPI cards retain background */
             justify-content: center;
         }
-
         .provincial-summary-card {
-            grid-column: 8 / 13; /* Spans 5 columns */
-            grid-row: 4 / 8; /* Spans rows 4 to 7 */
+            grid-column: 8 / 13;
+            grid-row: 4 / 8;
             display: flex;
             flex-direction: column;
-            padding: 1rem;
-            overflow-y: hidden; /* Hide scrollbar for the entire card, its content will scroll */
+            padding: 1.5rem;
+            overflow-y: hidden;
         }
-        /* Specific content area within provincial summary card for scrolling */
         #provincialSummaryContent {
             flex-grow: 1;
-            overflow-y: auto; /* Enable scrolling for content */
+            overflow-y: auto;
         }
-
-
         .monthly-trend-card {
-            grid-column: 1 / 5; /* Spans 4 columns */
-            grid-row: 8 / 12; /* Spans rows 8 to 11 */
+            grid-column: 1 / 5;
+            grid-row: 8 / 12;
         }
         .provincial-ranking-card {
-            grid-column: 5 / 9; /* Spans 4 columns */
+            grid-column: 5 / 9;
             grid-row: 8 / 12;
         }
         .leaderboard-card {
-            grid-column: 9 / 13; /* Spans 4 columns */
+            grid-column: 9 / 13;
             grid-row: 8 / 12;
         }
 
@@ -162,10 +191,9 @@
         #map {
             height: 100%;
             width: 100%;
-            border-radius: 0.5rem;
-            z-index: 0; /* Ensure map is behind other elements */
+            border-radius: 1.25rem;
+            z-index: 0;
         }
-        /* Light mode popups for Leaflet */
         .leaflet-popup-content-wrapper {
             background-color: #fff;
             color: #1f2937;
@@ -177,11 +205,42 @@
         .leaflet-popup-tip { background-color: #fff; }
         .leaflet-popup-content-wrapper * { font-family: 'Montserrat', sans-serif !important; color: #1f2937; }
 
-        /* Chart.js specific styling (for monthly trend) */
+        /* Custom marker icon styling for map */
+        .leaflet-div-icon {
+            background: none !important;
+            border: none !important;
+        }
+        .location-dot {
+            border-radius: 50%;
+            background-color: var(--brand-color);
+            box-shadow: 0 0 12px rgba(79, 70, 229, 0.8);
+            transition: all 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+        }
+        .location-dot:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 16px rgba(79, 70, 229, 1);
+        }
+        .location-dot-pulse {
+            animation: dot-pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+            position: absolute;
+            border-radius: 50%;
+            background-color: var(--brand-color);
+            opacity: 0.3;
+        }
+        @keyframes dot-pulse {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        /* Chart.js specific styling */
         .chart-container {
-            flex-grow: 1; /* Allow chart to take available space */
+            flex-grow: 1;
             position: relative;
-            min-height: 0; /* Prevent flex item from overflowing */
+            min-height: 0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -197,201 +256,154 @@
         /* Table container for scrolling content within cards */
         .table-container {
             flex-grow: 1;
-            overflow-y: auto; /* Enable scrolling for table content */
+            overflow-y: auto;
             min-height: 0;
         }
-        /* Custom scrollbar styling for better aesthetics */
         .table-container::-webkit-scrollbar { width: 6px; }
         .table-container::-webkit-scrollbar-track { background: transparent; }
         .table-container::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
         .table-container thead {
-            background-color: #e5e7eb;
-            position: sticky; /* Keep header visible on scroll */
+            background-color: #f3f4f6;
+            position: sticky;
             top: 0;
             z-index: 1;
         }
 
-        /* Provincial Summary Card Specific Styles (for Chart.js based graphs) */
+        /* Provincial Summary Card Specific Styles */
         .province-metric-item {
             display: flex;
-            align-items: center;
-            justify-content: center;
             flex-direction: column;
             gap: 0.5rem;
-            margin-bottom: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            background-color: rgba(243, 244, 246, 0.5); /* Light background for metric items */
-            border: 1px solid #f3f4f6;
-            height: 100%;
-            min-height: 120px;
-        }
-        .province-metric-item .chart-container {
-            flex-grow: 1;
-            width: 100%;
-            min-height: 80px;
-        }
-        .province-metric-item canvas {
-            max-height: 100%;
-            max-width: 100%;
-        }
-
-        /* Province filter buttons styling (removed from HTML) */
-        .province-button {
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem;
-            background-color: #d1d5db;
-            color: #374151;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            border: 1px solid #cbd5e1;
-            transition: all 0.2s ease-in-out;
-        }
-        .province-button:hover {
-            background-color: #e5e7eb;
-            transform: translateY(-2px);
-        }
-        .province-button.active {
-            background-color: #4f46e5;
-            border-color: #6366f1;
-            color: white;
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-        }
-
-        /* Custom marker icon styling for map */
-        .leaflet-div-icon {
-            background: none !important;
-            border: none !important;
-        }
-        .location-dot {
-            border-radius: 50%;
-            background-color: #4f46e5;
-            box-shadow: 0 0 8px rgba(79, 70, 229, 0.6);
-            transition: all 0.1s ease-out;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid white;
-        }
-        .location-dot-pulse {
-            animation: dot-pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-            position: absolute;
-            border-radius: 50%;
-            background-color: #4f46e5;
-            opacity: 0.2;
-        }
-        @keyframes dot-pulse {
-            0% { transform: scale(0.5); opacity: 0.8; }
-            100% { transform: scale(1.2); opacity: 0; }
-        }
-
-        /* Alerts overlay on map */
-        .leaflet-control-alerts-overlay { /* Renamed for Leaflet control */
-            position: absolute; /* This might be overridden by Leaflet's control positioning */
-            bottom: 1rem;
-            left: 1rem;
-            z-index: 1000;
-            max-height: 200px;
-            width: 250px;
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(8px);
+            padding: 1rem;
             border-radius: 0.75rem;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            padding: 0.75rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            color: #1f2937;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
         }
-        .leaflet-control-alerts-overlay ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .leaflet-control-alerts-overlay li {
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-        }
-        .leaflet-control-alerts-overlay::-webkit-scrollbar { width: 4px; }
-        .leaflet-control-alerts-overlay::-webkit-scrollbar-track { background: transparent; }
-        .leaflet-control-alerts-overlay::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 
-        /* Styles for the Monthly/Daily trend chart's filter buttons */
+        /* Chart filter button styles */
         .chart-filter-buttons {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.75rem;
             margin-top: 0.5rem;
             margin-bottom: 1rem;
             justify-content: center;
         }
         .chart-filter-button {
-            padding: 0.3rem 0.6rem;
-            border-radius: 0.3rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
             background-color: #e0e7ff;
-            color: #4f46e5;
-            font-size: 0.75rem;
-            font-weight: 500;
+            color: var(--brand-color);
+            font-size: 0.875rem;
+            font-weight: 600;
             cursor: pointer;
-            border: 1px solid #c7d2fe;
-            transition: all 0.2s ease-in-out;
-        }
-        .chart-filter-button.active {
-            background-color: #4f46e5;
-            color: white;
-            box-shadow: 0 2px 5px rgba(79, 70, 229, 0.2);
+            border: 1px solid var(--brand-light);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(67, 56, 202, 0.1);
         }
         .chart-filter-button:hover {
-            background-color: #a5b4fc;
+            background-color: #c7d2fe;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(67, 56, 202, 0.2);
         }
-        
-        /* SVG Map specific styling */
-        .leaflet-control-pakistan-svg-overlay {
-            z-index: 500;
-            position: absolute;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .chart-filter-button.active {
+            background-color: var(--brand-color);
+            color: white;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+            transform: translateY(-1px);
+        }
+        .chart-filter-button.active:hover {
+            transform: translateY(-2px);
         }
 
-        #pakistan-map-svg {
+        .update-notification {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            opacity: 0;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--brand-color);
+            color: white;
+            border-radius: 9999px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.4s ease-in-out;
+            z-index: 1000;
+        }
+        .update-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        #password-overlay {
+            background-color: var(--card-bg);
+        }
+        .password-form {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .password-form h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .password-form input {
+            padding: 0.75rem 1.25rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.75rem;
             width: 100%;
-            height: 100%;
-            display: block;
-            margin: auto;
+            max-width: 300px;
+            transition: border-color 0.3s;
         }
-        #pakistan-map-svg path, #pakistan-map-svg circle {
-            fill: rgba(167, 243, 208, 0.6);
-            stroke: #34d399;
-            stroke-width: 0.5;
-            transition: fill 0.3s ease, transform 0.1s ease;
-            cursor: pointer;
-            pointer-events: auto;
+        .password-form input:focus {
+            outline: none;
+            border-color: var(--brand-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
         }
-        #pakistan-map-svg path:hover, #pakistan-map-svg circle:hover {
-            fill: rgba(110, 231, 183, 0.7);
-            transform: scale(1.005);
+        .password-form button {
+            background-color: var(--brand-color);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            transition: all 0.3s;
         }
-        #pakistan-map-svg path.selected, #pakistan-map-svg circle.selected {
-            fill: rgba(5, 150, 105, 0.8);
-            stroke: #047857;
-            stroke-width: 1.5;
+        .password-form button:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(67, 56, 202, 0.4);
         }
     </style>
 </head>
 <body>
-    <div class="dashboard-grid">
-        <header class="card header flex flex-row items-center justify-between !py-2">
+    <div id="password-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 z-[9999] flex items-center justify-center">
+        <div class="password-form text-center">
+            <h2 class="text-xl font-bold">DFLT Dashboard Access</h2>
+            <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-16 w-auto">
+            <input type="password" id="passwordInput" placeholder="Enter password" class="text-center" />
+            <button id="submitPassword">Access Dashboard</button>
+            <p id="passwordError" class="text-sm text-red-500 hidden">Incorrect password. Please try again.</p>
+        </div>
+    </div>
+    
+    <div id="welcome-overlay" class="welcome-overlay" style="display: none;">
+        <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-24 w-auto mb-6 welcome-logo">
+        <h1 class="welcome-text-1">Welcome to DFLT Phase 2 Dashboard</h1>
+        <p class="welcome-text-2">Developed by Dr. Fareeha Armughan & Team</p>
+    </div>
+
+    <div id="update-notification" class="update-notification">
+        <span class="font-semibold">Updating...</span> Dashboard is refreshing.
+    </div>
+
+    <div class="dashboard-grid" id="dashboard-content" style="display: none;">
+        <header class="card header flex flex-row items-center justify-between">
             <div class="flex items-center gap-4">
-                <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-10">
+                <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-16 w-auto">
             </div>
 
             <div class="flex items-center justify-center gap-6 flex-grow">
@@ -399,13 +411,13 @@
                 <div class="flex items-center gap-2">
                     <label for="provinceFilter" class="text-xs font-medium text-gray-600">Province:</label>
                     <select id="provinceFilter" class="block py-1 px-2 border border-gray-300 bg-gray-50 text-gray-900 rounded-md shadow-sm focus:outline-none focus:ring-accent-main focus:border-accent-main text-xs" onchange="updateDashboard()">
-                        <option value="All">All</option>
+                        <option value="All">All Provinces</option>
                     </select>
                 </div>
                 <div class="flex items-center gap-2">
                     <label for="District_Filter" class="text-xs font-medium text-gray-600">District:</label>
                     <select id="District_Filter" class="block py-1 px-2 border border-gray-300 bg-gray-50 text-gray-900 rounded-md shadow-sm focus:outline-none focus:ring-accent-main focus:border-accent-main text-xs" onchange="updateDashboard()">
-                        <option value="All">All</option>
+                        <option value="All">All Districts</option>
                     </select>
                 </div>
                 <div class="text-right">
@@ -414,38 +426,32 @@
                 </div>
             </div>
 
-            <img src="https://resume.brightspyre.com/affiliates/INTERACT%20Consulting/Giz%20pic-6493ec850de4e.png" alt="DFLT Logo" class="h-12">
+            <img src="https://resume.brightspyre.com/affiliates/INTERACT%20Consulting/Giz%20pic-6493ec850de4e.png" alt="DFLT Logo" class="h-16 w-auto">
         </header>
 
         <div class="card map-card !p-1 relative">
             <div id="map"></div>
-            <div class="absolute top-2 right-2 z-[1000] bg-white/70 p-1 rounded-lg border border-gray-200">
-                <button id="toggleHeatmap" class="px-3 py-1 text-xs text-white bg-indigo-600 rounded-md">Toggle Heatmap</button>
+            <div class="absolute top-4 right-4 z-[1000]">
+                <button id="toggleHeatmap" class="px-3 py-1 text-xs text-white bg-gray-800/80 hover:bg-gray-800 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300">Toggle Heatmap</button>
             </div>
         </div>
         
         <div class="kpi-main">
-            <div class="card flex-col items-start">
+            <div class="card justify-center">
                 <h3 class="text-sm font-medium text-gray-600 flex items-center justify-between w-full">
                     <span>Total Beneficiaries Trained</span>
                     <span id="beneficiariesTargetPct" class="text-xs font-semibold text-teal-500">0%</span>
                 </h3>
                 <p id="totalBeneficiaries" class="text-4xl font-black text-indigo-600">0</p>
-                <div class="flex items-center justify-between w-full mt-2">
-                    <span class="text-xs text-gray-500">Target: <span id="beneficiaryOverallTarget">0</span></span>
-                    <div class="w-1/2 h-10 ml-auto"><canvas id="beneficiariesMiniChart"></canvas></div>
-                </div>
+                <span class="text-xs text-gray-500 mt-2">Target: <span id="beneficiaryOverallTarget">0</span></span>
             </div>
-            <div class="card flex-col items-start">
+            <div class="card justify-center">
                 <h3 class="text-sm font-medium text-gray-600 flex items-center justify-between w-full">
                     <span>Total Trainings Conducted</span>
                     <span id="trainingsTargetPct" class="text-xs font-semibold text-emerald-500">0%</span>
                 </h3>
                 <p id="totalTrainings" class="text-4xl font-black text-indigo-600">0</p>
-                <div class="flex items-center justify-between w-full mt-2">
-                    <span class="text-xs text-gray-500">Target: <span id="trainingOverallTarget">0</span></span>
-                    <div class="w-1/2 h-10 ml-auto"><canvas id="trainingsMiniChart"></canvas></div>
-                </div>
+                <span class="text-xs text-gray-500 mt-2">Target: <span id="trainingOverallTarget">0</span></span>
             </div>
             <div class="card justify-center col-span-1">
                 <h3 class="text-sm font-medium text-gray-600">Top Performing Province</h3>
@@ -462,7 +468,7 @@
                     <select id="provincialCardFilter" class="block py-1 px-2 border border-gray-300 bg-gray-50 text-gray-900 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs"></select>
                 </div>
             </div>
-            <div id="provincialSummaryContent" class="flex-grow flex flex-col p-4">
+            <div id="provincialSummaryContent" class="flex-grow flex flex-col p-1">
                 <p class="text-gray-500 text-sm text-center">Select a province to view its performance details.</p>
             </div>
         </div>
@@ -470,8 +476,8 @@
         <div class="card monthly-trend-card">
             <h3 class="text-md font-bold text-gray-800 flex-shrink-0">Beneficiaries Trend</h3>
             <div class="chart-filter-buttons">
-                <button class="chart-filter-button active" data-unit="month" data-metric="Beneficiary_Count_Actual">Monthly Beneficiaries</button>
-                <button class="chart-filter-button" data-unit="day" data-metric="Beneficiary_Count_Actual">Daily Beneficiaries</button>
+                <button class="chart-filter-button" data-unit="month" data-metric="Beneficiary_Count_Actual">Monthly</button>
+                <button class="chart-filter-button active" data-unit="day" data-metric="Beneficiary_Count_Actual">Daily</button>
             </div>
             <div class="chart-container"><canvas id="monthlyTrendChart"></canvas></div>
         </div>
@@ -519,7 +525,6 @@
     </div>
 
     <script>
-        // Global data and state variables
         let trainingData = [];
         let dashboardMetadata = {};
         let provinceDataSummary = {};
@@ -529,20 +534,20 @@
         let leaderboardData = [];
         let districtDataSummary = {};
 
-        // Mini chart instances
-        let beneficiariesMiniChart, trainingsMiniChart;
-        let occupationsPieChart;
+        let occupationsHorizontalBarChart;
+        let monthlyTrendChart;
+        let ageDistributionChart;
 
         const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTakZtvQeYjOMxvYbL91Ar8L99Ej3t2hZw2xJjFSqg0HLbaWrVyI7-bc4sS9A4RO4pgCH365J2OcRLt/pub?gid=317105383&single=true&output=csv';
-        const TOTAL_PROJECT_TARGET_BENEFICIARIES = 250000;
+        const TOTAL_PROJECT_TARGET_BENEFICIARIES = 280000;
         const MONTHLY_TARGET_PER_TRAINER = 256;
+        const PASSWORD = "DFLT_2025!";
 
-        // Define provincial targets for calculations
         let globalTargets = {
             provinces: {
-                "Punjab": {target_beneficiaries: 90000, target_trainings: 600},
+                "Punjab": {target_beneficiaries: 105000, target_trainings: 600},
                 "Sindh": {target_beneficiaries: 60000, target_trainings: 400},
-                "Khyber Pakhtunkhwa": {target_beneficiaries: 35000, target_trainings: 250},
+                "Khyber Pakhtunkhwa": {target_beneficiaries: 65000, target_trainings: 250},
                 "Balochistan": {target_beneficiaries: 20000, target_trainings: 150},
                 "Gilgit-Baltistan": {target_beneficiaries: 10000, target_trainings: 80},
                 "Azad Jammu & Kashmir": {target_beneficiaries: 15000, target_trainings: 100},
@@ -550,29 +555,23 @@
             }
         };
 
-        // Chart color palette and Leaflet map variables
-        const CHART_COLORS = {
-            primary: '#4f46e5', danger: '#ef4444'
-        };
         const provinceColors = {
             "Punjab": "#22c55e", "Sindh": "#3b82f6", "Khyber Pakhtunkhwa": "#f97316", "Balochistan": "#ef4444",
             "Gilgit-Baltistan": "#a855f7", "Azad Jammu & Kashmir": "#06b6d4", "Islamabad Capital Territory": "#facc15"
         };
-        let map, markers, heatLayer, monthlyTrendChart;
+        const ageColors = {
+            '18-29': '#3b82f6', '30-39': '#10b981', '40-49': '#f59e0b', '50-59': '#ef4444', '60+': '#a855f7', 'Unknown': '#64748b'
+        };
+        let map, markers, heatLayer;
 
-        /**
-         * Fetches data from the Google Sheet CSV and initializes the dashboard.
-         * This is the main entry point for the application.
-         */
         async function loadDataAndInitialize() {
             try {
-                const response = await fetch(GOOGLE_SHEET_CSV_URL);
+                const response = await fetch(`${GOOGLE_SHEET_CSV_URL}&t=${new Date().getTime()}`);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch data from Google Sheets. Please ensure the link is correct and the sheet is published to the web.');
+                    throw new Error('Failed to fetch data from Google Sheets.');
                 }
                 const rawCsv = await response.text();
                 
-                // Process the raw CSV data into our dashboard's structured format
                 const processedData = processCSVData(rawCsv);
                 trainingData = processedData.dashboard_data;
                 dashboardMetadata = processedData.metadata;
@@ -581,31 +580,23 @@
                     throw new Error("Dashboard data is missing or empty after processing.");
                 }
                 
-                // Pre-process all data for fast dashboard rendering
                 preProcessAllData(trainingData);
-
-                // Populate all dropdown filters and update the UI
                 populateFilters(trainingData);
                 initializeMap();
                 initializeCharts();
                 updateDashboard();
 
-                // Set event listeners for interactive elements
                 setupEventListeners();
                 
             } catch (error) {
                 console.error(error);
-                // Display a user-friendly error message
-                alert("An error occurred while loading dashboard data. Please check the console for details.");
+                const updateNotification = document.getElementById('update-notification');
+                updateNotification.textContent = "Error loading data. Reloading...";
+                updateNotification.classList.add('show');
+                setTimeout(() => location.reload(), 3000);
             }
         }
         
-        /**
-         * Parses the raw CSV string and processes it into the structured JSON format
-         * that the dashboard expects. This replaces the Python script.
-         * @param {string} csvText - The raw CSV content from the Google Sheet.
-         * @returns {object} - An object containing the processed data and metadata.
-         */
         function processCSVData(csvText) {
             const lines = csvText.trim().split('\n');
             const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
@@ -618,16 +609,14 @@
                 return row;
             });
 
-            // Separate Day 1 and Day 2 data
             const day1Data = dataRows.filter(row => row.main_menu === 'day1');
             const day2Data = dataRows.filter(row => row.main_menu === 'day2');
 
-            // Map Day 2 attendance CNICs for quick lookup
             const day2Attendance = new Map();
             day2Data.forEach(row => {
                 const sessionId = row.day2_session_select;
                 if (sessionId) {
-                    const cnicList = new Set(row.beneficiaries_present.split(' ').filter(c => c.trim() !== ''));
+                    const cnicList = new Set(row.beneficiaries_present.split(' ').filter(c => c.trim() !== '').map(c => c.replace(/-/g, '')));
                     day2Attendance.set(sessionId, cnicList);
                 }
             });
@@ -651,10 +640,12 @@
                     const cnicCol = `beneficiary_cnic_${i}`;
                     const nameCol = `beneficiary_name_${i}`;
                     const occupationCol = `occupation_${i}`;
+                    const ageCol = `age_${i}`;
 
                     const cnic = row[cnicCol];
                     const name = row[nameCol];
                     const occupation = row[occupationCol];
+                    const age = row[ageCol];
 
                     if (cnic) {
                         const standardizedCnic = cnic.replace(/[^0-9]/g, '');
@@ -664,12 +655,12 @@
                             cnic: standardizedCnic,
                             name: name,
                             occupation: occupation,
+                            age: parseInt(age, 10) || null,
                             attended_day2: hasAttendedDay2
                         });
                         
-                        // Aggregate female occupations directly as all are female
                         if (occupation) {
-                             sessionsMap.get(sessionId).female_occupations[occupation] = (sessionsMap.get(sessionId).female_occupations[occupation] || 0) + 1;
+                            sessionsMap.get(sessionId).female_occupations[occupation] = (sessionsMap.get(sessionId).female_occupations[occupation] || 0) + 1;
                         }
                     }
                 }
@@ -678,11 +669,11 @@
             sessionsMap.forEach(session => {
                 const beneficiaryCount = session.beneficiaries.length;
                 
-                // Calculate retention rate
                 const attendedDay2Count = session.beneficiaries.filter(b => b.attended_day2).length;
                 const retentionRate = beneficiaryCount > 0 ? (attendedDay2Count / beneficiaryCount) * 100 : 0;
                 
-                // Calculate average training time
+                let trainerName = session.session_id.split(' ')[0] || session.lead_trainer_name;
+
                 let avgTrainingTimeHours = 0;
                 try {
                     const startTime = new Date(`1970-01-01T${session.start.match(/\d{2}:\d{2}:\d{2}/)[0]}`);
@@ -691,11 +682,9 @@
                     avgTrainingTimeHours = durationMs / (1000 * 60 * 60);
                 } catch (e) {}
 
-                // Calculate quality index
                 const qualityScore = parseFloat(session.q_read_write || 0) + parseFloat(session.q_recognize_currency || 0) + parseFloat(session.q_simple_math || 0);
                 const qualityIndex = qualityScore / 3;
 
-                // Extract location
                 let lat = null, lon = null;
                 const locationMatch = session.training_location.match(/(\-?\d+\.\d+)\s(\-?\d+\.\d+)/);
                 if (locationMatch) {
@@ -708,15 +697,16 @@
                     Training_Date: session.SubmissionDate,
                     Province: session.province_select,
                     District: session.district_select,
-                    ASPC_Name: session.lead_trainer_name,
+                    ASPC_Name: trainerName,
                     Beneficiary_Count_Actual: beneficiaryCount,
-                    Female_Beneficiaries: beneficiaryCount, // All are female
+                    Female_Beneficiaries: beneficiaryCount,
                     Retention_Rate_Pct: parseFloat(retentionRate.toFixed(2)),
                     Avg_Training_Time_Hours: parseFloat(avgTrainingTimeHours.toFixed(1)),
                     Female_Occupations: session.female_occupations,
                     Quality_Index: parseFloat(qualityIndex.toFixed(2)),
                     Start_Location_Lat: lat,
                     Start_Location_Lon: lon,
+                    Beneficiaries_Details: session.beneficiaries
                 });
             });
 
@@ -728,11 +718,7 @@
                 }
             };
         }
-
-        /**
-         * Pre-processes raw training data into aggregated summaries for faster access.
-         * This runs only once on page load.
-         */
+        
         function preProcessAllData(data) {
             provinceDataSummary = {};
             districtDataSummary = {};
@@ -740,17 +726,18 @@
             aggregatedDailyTrendData = {};
 
             data.forEach(item => {
-                // Aggregate data at the provincial level
                 const provinceName = item.Province;
+                const trainingRetentionRate = item.Retention_Rate_Pct || 0;
                 if (!provinceDataSummary[provinceName]) {
                     provinceDataSummary[provinceName] = {
-                        trainings: 0, beneficiaries: 0, total_training_time: 0, total_retention_rate: 0, total_quality_index: 0, item_count: 0, female_occupations: {}
+                        trainings: 0, beneficiaries: 0, total_training_time: 0, total_retention_rate_sum: 0, total_quality_index: 0, item_count: 0, female_occupations: {},
+                        age_distribution: { '18-29': 0, '30-39': 0, '40-49': 0, '50-59': 0, '60+': 0, 'Unknown': 0 }
                     };
                 }
                 provinceDataSummary[provinceName].trainings++;
                 provinceDataSummary[provinceName].beneficiaries += item.Beneficiary_Count_Actual || 0;
                 provinceDataSummary[provinceName].total_training_time += item.Avg_Training_Time_Hours || 0;
-                provinceDataSummary[provinceName].total_retention_rate += item.Retention_Rate_Pct || 0;
+                provinceDataSummary[provinceName].total_retention_rate_sum += trainingRetentionRate;
                 provinceDataSummary[provinceName].total_quality_index += item.Quality_Index || 0;
                 provinceDataSummary[provinceName].item_count++;
                 
@@ -758,7 +745,18 @@
                     provinceDataSummary[provinceName].female_occupations[occupation] = (provinceDataSummary[provinceName].female_occupations[occupation] || 0) + item.Female_Occupations[occupation];
                 }
 
-                // Aggregate data at the district level
+                if (item.Beneficiaries_Details) {
+                    item.Beneficiaries_Details.forEach(beneficiary => {
+                        const age = beneficiary.age;
+                        if (age >= 18 && age <= 29) provinceDataSummary[provinceName].age_distribution['18-29']++;
+                        else if (age >= 30 && age <= 39) provinceDataSummary[provinceName].age_distribution['30-39']++;
+                        else if (age >= 40 && age <= 49) provinceDataSummary[provinceName].age_distribution['40-49']++;
+                        else if (age >= 50 && age <= 59) provinceDataSummary[provinceName].age_distribution['50-59']++;
+                        else if (age >= 60) provinceDataSummary[provinceName].age_distribution['60+']++;
+                        else provinceDataSummary[provinceName].age_distribution['Unknown']++;
+                    });
+                }
+
                 const districtName = item.District;
                 if (!districtDataSummary[districtName]) {
                     districtDataSummary[districtName] = { trainings: 0, beneficiaries: 0 };
@@ -766,7 +764,6 @@
                 districtDataSummary[districtName].trainings++;
                 districtDataSummary[districtName].beneficiaries += item.Beneficiary_Count_Actual || 0;
 
-                // Aggregate data for monthly/daily trends
                 const date = new Date(item.Training_Date);
                 const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-01`;
                 const dayKey = date.toISOString().split('T')[0];
@@ -775,15 +772,13 @@
                 aggregatedDailyTrendData[dayKey] = (aggregatedDailyTrendData[dayKey] || 0) + (item.Beneficiary_Count_Actual || 0);
             });
 
-            // Calculate averages for provinces
             for (const pName in provinceDataSummary) {
                 const summary = provinceDataSummary[pName];
-                summary.avg_retention_rate = summary.item_count > 0 ? (summary.total_retention_rate / summary.item_count) : 0;
+                summary.avg_retention_rate = summary.item_count > 0 ? (summary.total_retention_rate_sum / summary.item_count) : 0;
                 summary.avg_quality_index = summary.item_count > 0 ? (summary.total_quality_index / summary.item_count) : 0;
                 summary.avg_training_time = summary.item_count > 0 ? (summary.total_training_time / summary.item_count) : 0;
             }
 
-            // Create data for provincial rankings table
             const provincialPerformance = {};
             for (const pName in globalTargets.provinces) {
                 provincialPerformance[pName] = {
@@ -807,7 +802,6 @@
                 };
             });
 
-            // Create data for top trainers leaderboard
             const now = new Date();
             const monthlyData = data.filter(item => {
                 const trainingDate = new Date(item.Training_Date);
@@ -815,8 +809,9 @@
             });
             const trainerPerformance = monthlyData.reduce((acc, item) => {
                 const trainerName = item.ASPC_Name;
+                const districtName = item.District;
                 if (trainerName) {
-                    if (!acc[trainerName]) acc[trainerName] = { beneficiaries: 0, trainings: 0 };
+                    if (!acc[trainerName]) acc[trainerName] = { beneficiaries: 0, trainings: 0, district: districtName };
                     acc[trainerName].beneficiaries += (item.Beneficiary_Count_Actual || 0);
                     acc[trainerName].trainings++;
                 }
@@ -824,15 +819,11 @@
             }, {});
             leaderboardData = Object.entries(trainerPerformance).map(([name, stats]) => {
                 const percent = Math.min(100, Math.round((stats.beneficiaries / MONTHLY_TARGET_PER_TRAINER) * 100));
-                return { name, beneficiaries: stats.beneficiaries, target_pct: percent };
+                return { name, beneficiaries: stats.beneficiaries, target_pct: percent, district: stats.district };
             }).sort((a, b) => b.beneficiaries - a.beneficiaries).slice(0, 5);
         }
 
-        /**
-         * Sets up all the event listeners for the dashboard controls.
-         */
         function setupEventListeners() {
-            // Update the provincial ranking table based on the selected metric
             document.querySelectorAll('.provincial-ranking-card .chart-filter-button').forEach(button => {
                 button.addEventListener('click', () => {
                     document.querySelectorAll('.provincial-ranking-card .chart-filter-button').forEach(b => b.classList.remove('active'));
@@ -841,7 +832,6 @@
                 });
             });
 
-            // Update the monthly trend chart based on the selected time unit
             document.querySelectorAll('.monthly-trend-card .chart-filter-buttons .chart-filter-button').forEach(button => {
                 button.addEventListener('click', () => {
                     document.querySelectorAll('.monthly-trend-card .chart-filter-buttons .chart-filter-button').forEach(b => b.classList.remove('active'));
@@ -851,7 +841,6 @@
                 });
             });
 
-            // Handle map click events to select a province
             document.getElementById('map').addEventListener('click', (event) => {
                 let targetElement = event.target;
                 while (targetElement && targetElement !== this && !targetElement.dataset.provinceName) {
@@ -869,18 +858,12 @@
             document.getElementById('toggleHeatmap').addEventListener('click', toggleHeatmap);
         }
         
-        /**
-         * Updates the current time and date in the header.
-         */
         function updateTime() {
             const now = new Date();
             document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
             document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
         }
 
-        /**
-         * Populates the province and district dropdown filters.
-         */
         function populateFilters(data) {
             const provinceFilter = document.getElementById('provinceFilter');
             const districtFilter = document.getElementById('District_Filter');
@@ -889,29 +872,23 @@
             const uniqueProvinces = [...new Set(data.map(item => item.Province).filter(Boolean))].sort();
             const uniqueDistricts = [...new Set(data.map(item => item.District).filter(Boolean))].sort();
 
-            // Populate Province filters
             provinceFilter.innerHTML = '<option value="All">All Provinces</option>';
-            provincialCardFilter.innerHTML = '<option value="Select Province">Select Province</option><option value="All">All Provinces</option>';
+            provincialCardFilter.innerHTML = '';
             uniqueProvinces.forEach(p => {
                 provinceFilter.add(new Option(p, p));
                 provincialCardFilter.add(new Option(p, p));
             });
 
-            // Populate District filter
             districtFilter.innerHTML = '<option value="All">All Districts</option>';
             uniqueDistricts.forEach(d => {
                 districtFilter.add(new Option(d, d));
             });
-
-            // Set the default filter to Punjab
             provinceFilter.value = 'Punjab';
             provincialCardFilter.value = 'Punjab';
         }
 
-        /**
-         * Initializes the Leaflet map and heat map layers.
-         */
         function initializeMap() {
+            if(map) map.remove();
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([30.3753, 69.3451], 5.5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -924,9 +901,6 @@
             });
         }
 
-        /**
-         * Toggles the visibility of the heat map layer.
-         */
         function toggleHeatmap() {
             if (map.hasLayer(heatLayer)) {
                 map.removeLayer(heatLayer);
@@ -937,9 +911,6 @@
             }
         }
 
-        /**
-         * Updates all dashboard components based on the current filters.
-         */
         function updateDashboard() {
             const provinceFilterValue = document.getElementById('provinceFilter').value;
             const districtFilterValue = document.getElementById('District_Filter').value;
@@ -956,15 +927,13 @@
             updateProvincialRanking();
 
             const activeUnitButton = document.querySelector('.monthly-trend-card .chart-filter-buttons .active');
-            const currentUnit = activeUnitButton ? activeUnitButton.dataset.unit : 'month';
+            const currentUnit = activeUnitButton ? activeUnitButton.dataset.unit : 'day';
             const currentMetric = activeUnitButton ? activeUnitButton.dataset.metric : 'Beneficiary_Count_Actual';
             updateMonthlyTrendChart(filteredData, currentUnit, currentMetric);
 
-            // Update the provincial summary card based on the current province filter
             document.getElementById('provincialCardFilter').value = provinceFilterValue;
             updateProvincialSummaryContent(provinceFilterValue);
             
-            // Highlight the selected province on the SVG map
             document.querySelectorAll('#pakistan-map-svg path, #pakistan-map-svg circle').forEach(path => path.classList.remove('selected'));
             if (provinceFilterValue !== 'All') {
                 const svgProvinceElement = document.querySelector(`#pakistan-map-svg [data-province-name="${provinceFilterValue}"]`);
@@ -974,9 +943,6 @@
             }
         }
 
-        /**
-         * Animates a numerical value from its current state to a new state.
-         */
         function animateValue(obj, start, end, duration, isPercent = false) {
             let startTimestamp = null;
             const step = (timestamp) => {
@@ -989,9 +955,6 @@
             window.requestAnimationFrame(step);
         }
 
-        /**
-         * Updates the main KPI cards at the top of the dashboard.
-         */
         function updateKPIs(data, currentFilterProvince) {
             const totalBeneficiaries = data.reduce((s, i) => s + (i.Beneficiary_Count_Actual || 0), 0);
             const totalTrainings = data.length;
@@ -1036,49 +999,8 @@
             }
             document.getElementById('topProvinceName').textContent = topProvince || 'N/A';
             document.getElementById('topProvincePct').textContent = `${maxProvinceAchievedPct.toFixed(1)}% Target Achieved`;
-
-            // Update mini trend charts
-            updateMiniTrendCharts(data);
         }
-
-        /**
-         * Updates the mini trend charts in the KPI cards.
-         * @param {Array<Object>} data - The filtered training data.
-         */
-        function updateMiniTrendCharts(data) {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            const filteredData = data.filter(item => new Date(item.Training_Date) >= thirtyDaysAgo);
-
-            const dailyBeneficiaries = {};
-            const dailyTrainings = {};
-            
-            filteredData.forEach(item => {
-                const dateKey = item.Training_Date;
-                dailyBeneficiaries[dateKey] = (dailyBeneficiaries[dateKey] || 0) + (item.Beneficiary_Count_Actual || 0);
-                dailyTrainings[dateKey] = (dailyTrainings[dateKey] || 0) + 1;
-            });
-
-            const labels = Object.keys(dailyBeneficiaries).sort();
-            const beneficiaryData = labels.map(key => dailyBeneficiaries[key]);
-            const trainingData = labels.map(key => dailyTrainings[key]);
-
-            if (beneficiariesMiniChart) {
-                beneficiariesMiniChart.data.labels = labels;
-                beneficiariesMiniChart.data.datasets[0].data = beneficiaryData;
-                beneficiariesMiniChart.update();
-            }
-
-            if (trainingsMiniChart) {
-                trainingsMiniChart.data.labels = labels;
-                trainingsMiniChart.data.datasets[0].data = trainingData;
-                trainingsMiniChart.update();
-            }
-        }
-
-        /**
-         * Updates the markers and heatmap on the map.
-         */
+        
         function updateMapAndHeatmap(data) {
             markers.clearLayers();
             const heatPoints = [];
@@ -1114,9 +1036,6 @@
             }
         }
         
-        /**
-         * Updates the provincial summary content with detailed metrics.
-         */
         function updateProvincialSummaryContent(selectedProvinceName) {
             const provincialSummaryContent = document.getElementById('provincialSummaryContent');
             const provincialSummaryTitle = document.getElementById('provincialSummaryTitle');
@@ -1126,16 +1045,14 @@
             
             if (!provinceData || selectedProvinceName === 'All' || selectedProvinceName === 'Select Province') {
                 provincialSummaryContent.innerHTML = `<p class="text-gray-500 text-sm text-center">Select a province to view its performance details.</p>`;
+                if (occupationsHorizontalBarChart) occupationsHorizontalBarChart.destroy();
+                if (ageDistributionChart) ageDistributionChart.destroy();
                 return;
             }
 
-            // Create occupations data for the pie chart
             const occupationLabels = Object.keys(provinceData.female_occupations);
             const occupationData = Object.values(provinceData.female_occupations);
             const totalOccupations = occupationData.reduce((sum, val) => sum + val, 0);
-
-            // Dynamically generate a visually appealing color palette for the pie chart
-            const dynamicColors = occupationLabels.map((_, i) => `hsl(${i * 60}, 70%, 50%)`);
 
             provincialSummaryContent.innerHTML = `
                 <div class="grid grid-cols-2 gap-4">
@@ -1157,73 +1074,114 @@
                     </div>
                 </div>
 
-                <div class="mt-6 p-4 bg-white rounded-lg shadow-sm flex-grow">
-                    <h4 class="text-lg font-bold text-gray-800 mb-2">Top Occupations</h4>
-                    <div class="chart-container h-full w-full flex items-center justify-center">
-                        ${totalOccupations > 0 ? '<canvas id="occupationsPieChart"></canvas>' : '<p class="text-gray-500 text-sm text-center">No occupation data available.</p>'}
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4 flex-grow">
+                    <div class="p-4 bg-white rounded-lg shadow-inner flex flex-col min-h-[250px]">
+                        <h4 class="text-md font-bold text-gray-800 mb-2 flex-shrink-0">Top Occupations</h4>
+                        <div class="chart-container h-full w-full flex-grow flex items-center justify-center">
+                            ${totalOccupations > 0 ? '<canvas id="occupationsHorizontalBarChart"></canvas>' : '<p class="text-gray-500 text-sm text-center">No occupation data.</p>'}
+                        </div>
+                    </div>
+                    <div class="p-4 bg-white rounded-lg shadow-inner flex flex-col min-h-[250px]">
+                        <h4 class="text-md font-bold text-gray-800 mb-2 flex-shrink-0">Beneficiary Age Distribution</h4>
+                        <div class="chart-container h-full w-full flex-grow flex items-center justify-center">
+                            ${provinceData.beneficiaries > 0 ? '<canvas id="ageDistributionChart"></canvas>' : '<p class="text-gray-500 text-sm text-center">No age data.</p>'}
+                        </div>
                     </div>
                 </div>
             `;
             if (totalOccupations > 0) {
-                renderOccupationsPieChart(occupationLabels, occupationData, dynamicColors);
+                renderOccupationsHorizontalBarChart(occupationLabels, occupationData);
+            }
+             if (provinceData.beneficiaries > 0) {
+                renderAgeDistributionChart(provinceData.age_distribution);
             }
         }
-
-        /**
-         * Renders the pie chart for occupations.
-         */
-        function renderOccupationsPieChart(labels, data, colors) {
-            const ctx = document.getElementById('occupationsPieChart').getContext('2d');
-            if (occupationsPieChart) {
-                occupationsPieChart.destroy();
+        
+        function renderOccupationsHorizontalBarChart(labels, data) {
+            const ctx = document.getElementById('occupationsHorizontalBarChart').getContext('2d');
+            if (occupationsHorizontalBarChart) {
+                occupationsHorizontalBarChart.destroy();
             }
-            occupationsPieChart = new Chart(ctx, {
-                type: 'doughnut',
+            occupationsHorizontalBarChart = new Chart(ctx, {
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
+                        label: 'Number of Beneficiaries',
                         data: data,
-                        backgroundColor: colors,
-                        hoverOffset: 4
+                        backgroundColor: [
+                            '#4c51bf', '#48bb78', '#f6ad55', '#e53e3e', '#805ad5',
+                            '#38b2ac', '#4299e1', '#d53f8c', '#ecc94b', '#f7fafc'
+                        ],
+                        borderColor: [
+                             '#3b3b8c', '#389e67', '#c28532', '#c53030', '#6b46c1',
+                             '#2c7a7b', '#2b6cb0', '#a02b66', '#a78b3f', '#e2e8f0'
+                        ],
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { beginAtZero: true },
+                        y: { ticks: { font: { family: 'Montserrat' } } }
+                    },
                     plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                font: {
-                                    family: 'Montserrat'
-                                }
-                            }
+                        legend: { display: false },
+                        tooltip: { titleFont: { family: 'Montserrat' }, bodyFont: { family: 'Montserrat' } }
+                    }
+                }
+            });
+        }
+        
+        function renderAgeDistributionChart(ageData) {
+            const ctx = document.getElementById('ageDistributionChart').getContext('2d');
+            if (ageDistributionChart) {
+                ageDistributionChart.destroy();
+            }
+            const labels = Object.keys(ageData);
+            const data = Object.values(ageData);
+
+            ageDistributionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Beneficiaries by Age Group',
+                        data: data,
+                        backgroundColor: Object.values(ageColors),
+                        borderColor: Object.values(ageColors).map(c => c.replace('0.6)', '1)')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#1a202c',
+                                font: { family: 'Montserrat' },
+                                maxRotation: 45,
+                                minRotation: 45,
+                            },
+                            grid: { display: false }
                         },
-                        tooltip: {
-                            titleFont: { family: 'Montserrat' },
-                            bodyFont: { family: 'Montserrat' },
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += context.parsed;
-                                    }
-                                    return label;
-                                }
-                            }
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#e2e8f0' }
                         }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false }
                     }
                 }
             });
         }
 
-
-        /**
-         * Initializes the Chart.js instances.
-         */
         function initializeCharts() {
             const ticksColor = '#212529', gridColor = '#e5e7eb';
             const defaultOptions = {
@@ -1259,19 +1217,10 @@
                 data: {
                     labels: [],
                     datasets: [{
-                        data: [],
-                        borderWidth: 2,
-                        tension: 0.4, // Increased tension for a smoother line
-                        pointRadius: 3,
-                        pointBackgroundColor: '#4f46e5',
-                        borderColor: '#4f46e5',
-                        fill: true,
+                        data: [], borderWidth: 2, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#4f46e5', borderColor: '#4f46e5', fill: true,
                         backgroundColor: (context) => {
-                            const chart = context.chart;
-                            const {ctx, chartArea} = chart;
-                            if (!chartArea) {
-                                return null;
-                            }
+                            const {ctx, chartArea} = context.chart;
+                            if (!chartArea) return null;
                             const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
                             gradient.addColorStop(0, 'rgba(79, 70, 229, 0)');
                             gradient.addColorStop(1, 'rgba(79, 70, 229, 0.4)');
@@ -1282,85 +1231,16 @@
                 options: {
                     ...defaultOptions,
                     scales: {
-                        x: {
-                            type: 'time',
-                            time: { unit: 'month' },
-                            ticks: { color: ticksColor, font: { family: 'Montserrat' } },
-                            grid: { color: gridColor }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: { color: ticksColor, font: { family: 'Montserrat' } },
-                            grid: { color: gridColor }
-                        }
+                        x: { type: 'time', time: { unit: 'day' }, ticks: { color: ticksColor, font: { family: 'Montserrat' } }, grid: { color: gridColor } },
+                        y: { beginAtZero: true, ticks: { color: ticksColor, font: { family: 'Montserrat' } }, grid: { color: gridColor } }
                     }
                 }
             });
-
-            // Mini chart options
-            const miniChartOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                elements: { point: { radius: 0 } },
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                scales: {
-                    x: { display: false },
-                    y: { display: false }
-                },
-                layout: {
-                    padding: { top: 0, bottom: 0, left: 0, right: 0 }
-                }
-            };
-
-            // Initialize Beneficiaries Mini Chart
-            const beneficiariesCtx = document.getElementById('beneficiariesMiniChart').getContext('2d');
-            beneficiariesMiniChart = new Chart(beneficiariesCtx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        data: [],
-                        borderColor: '#2dd4bf',
-                        borderWidth: 1.5,
-                        tension: 0.6,
-                        fill: false
-                    }]
-                },
-                options: miniChartOptions
-            });
-
-            // Initialize Trainings Mini Chart
-            const trainingsCtx = document.getElementById('trainingsMiniChart').getContext('2d');
-            trainingsMiniChart = new Chart(trainingsCtx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        data: [],
-                        borderColor: '#34d399',
-                        borderWidth: 1.5,
-                        tension: 0.6,
-                        fill: false
-                    }]
-                },
-                options: miniChartOptions
-            });
         }
 
-        /**
-         * Updates the monthly/daily trend chart data.
-         */
-        function updateMonthlyTrendChart(filteredData, unit = 'month', metric = 'Beneficiary_Count_Actual') {
-            let dataToUse;
-            if (unit === 'day') {
-                dataToUse = aggregatedDailyTrendData;
-            } else {
-                dataToUse = aggregatedMonthlyTrendData;
-            }
-
+        function updateMonthlyTrendChart(filteredData, unit = 'day', metric = 'Beneficiary_Count_Actual') {
             let filteredAggregatedData = {};
             
-            // Re-aggregate based on current filter selection
             filteredData.forEach(item => {
                 const date = new Date(item.Training_Date);
                 const key = (unit === 'day') ? date.toISOString().split('T')[0] : `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-01`;
@@ -1371,22 +1251,17 @@
             const labels = sortedKeys.map(key => new Date(key));
             const values = sortedKeys.map(key => filteredAggregatedData[key]);
             
-            // Update the chart data and options
             monthlyTrendChart.data.labels = labels;
             monthlyTrendChart.data.datasets[0].data = values;
             monthlyTrendChart.options.scales.x.time.unit = unit;
             
-            // Set the target line value
-            let currentTargetValue = (unit === 'day') ? (TOTAL_PROJECT_TARGET_BENEFICIARIES / 8) / 30.4 : (TOTAL_PROJECT_TARGET_BENEFICIARIES / 8);
+            let currentTargetValue = (unit === 'day') ? (TOTAL_PROJECT_TARGET_BENEFICIARIES / Object.keys(provinceDataSummary).length) / 30.4 : (TOTAL_PROJECT_TARGET_BENEFICIARIES / Object.keys(provinceDataSummary).length);
             monthlyTrendChart.options.plugins.annotation.annotations.targetLine.value = currentTargetValue;
             monthlyTrendChart.options.plugins.annotation.annotations.targetLine.label.content = `Target: ${currentTargetValue.toFixed(0)}`;
             
             monthlyTrendChart.update();
         }
 
-        /**
-         * Updates the provincial ranking table.
-         */
         function updateProvincialRanking() {
             const activeSortButton = document.querySelector('.provincial-ranking-card .flex.gap-2 .chart-filter-button.active');
             const sortMetric = activeSortButton ? activeSortButton.dataset.sortMetric : 'beneficiaries';
@@ -1396,115 +1271,42 @@
             let sortedData = [];
             let tableHeaderHTML = '';
 
-            // Logic for each sort/filter button
-            if (sortMetric === 'beneficiaries') {
-                sortedData = [...provincialRankingsData].sort((a, b) => b.beneficiaries - a.beneficiaries);
-                tableHeaderHTML = `
-                    <tr>
-                        <th class="px-4 py-2">Rank</th>
-                        <th class="px-4 py-2">Province</th>
-                        <th class="px-4 py-2">Beneficiaries</th>
-                        <th class="px-4 py-2">Trainings</th>
-                        <th class="px-4 py-2">Target %</th>
-                    </tr>
-                `;
+            if (sortMetric === 'beneficiaries' || sortMetric === 'trainings' || sortMetric === 'target_achievement') {
+                 if (sortMetric === 'beneficiaries') sortedData = [...provincialRankingsData].sort((a, b) => b.beneficiaries - a.beneficiaries);
+                 if (sortMetric === 'trainings') sortedData = [...provincialRankingsData].sort((a, b) => b.trainings - a.trainings);
+                 if (sortMetric === 'target_achievement') sortedData = [...provincialRankingsData].sort((a, b) => b.beneficiary_target_pct - a.beneficiary_target_pct);
+
+                tableHeaderHTML = `<tr><th class="px-4 py-2">Rank</th><th class="px-4 py-2">Province</th><th class="px-4 py-2">Beneficiaries</th><th class="px-4 py-2">Trainings</th><th class="px-4 py-2">Target %</th></tr>`;
                 tableBody.innerHTML = sortedData.map((item, index) => {
-                    const targetPercentColor = item.beneficiary_target_pct >= 100 ? 'bg-green-500' : (item.beneficiary_target_pct >= 75 ? 'bg-yellow-500' : 'bg-red-500');
-                    return `
-                        <tr class="border-b border-gray-200">
-                            <td class="px-4 py-2 font-medium text-gray-800">${index + 1}</td>
-                            <td class="px-4 py-2 text-gray-700">${item.province}</td>
-                            <td class="px-4 py-2 text-gray-700">${(item.beneficiaries || 0).toLocaleString()}</td>
-                            <td class="px-4 py-2 text-gray-700">${(item.trainings || 0).toLocaleString()}</td>
-                            <td class="px-4 py-2 text-gray-700">
-                                <div class="w-full bg-gray-300 rounded-full h-2.5">
-                                    <div class="${targetPercentColor} h-2.5 rounded-full" style="width: ${Math.min(100, item.beneficiary_target_pct)}%"></div>
-                                </div>
-                                <span class="text-xs text-gray-600">${(item.beneficiary_target_pct || 0).toFixed(1)}%</span>
-                            </td>
-                        </tr>`;
-                }).join('');
-            } else if (sortMetric === 'trainings') {
-                 sortedData = [...provincialRankingsData].sort((a, b) => b.trainings - a.trainings);
-                tableHeaderHTML = `
-                    <tr>
-                        <th class="px-4 py-2">Rank</th>
-                        <th class="px-4 py-2">Province</th>
-                        <th class="px-4 py-2">Trainings</th>
-                        <th class="px-4 py-2">Beneficiaries</th>
-                        <th class="px-4 py-2">Target %</th>
-                    </tr>
-                `;
-                tableBody.innerHTML = sortedData.map((item, index) => {
-                     const targetPercentColor = item.beneficiary_target_pct >= 100 ? 'bg-green-500' : (item.beneficiary_target_pct >= 75 ? 'bg-yellow-500' : 'bg-red-500');
-                    return `
-                        <tr class="border-b border-gray-200">
-                            <td class="px-4 py-2 font-medium text-gray-800">${index + 1}</td>
-                            <td class="px-4 py-2 text-gray-700">${item.province}</td>
-                            <td class="px-4 py-2 text-gray-700">${(item.trainings || 0).toLocaleString()}</td>
-                            <td class="px-4 py-2 text-gray-700">${(item.beneficiaries || 0).toLocaleString()}</td>
-                            <td class="px-4 py-2 text-gray-700">
-                                <div class="w-full bg-gray-300 rounded-full h-2.5">
-                                    <div class="${targetPercentColor} h-2.5 rounded-full" style="width: ${Math.min(100, item.beneficiary_target_pct)}%"></div>
-                                </div>
-                                <span class="text-xs text-gray-600">${(item.beneficiary_target_pct || 0).toFixed(1)}%</span>
-                            </td>
-                        </tr>`;
-                }).join('');
-            } else if (sortMetric === 'target_achievement') {
-                sortedData = [...provincialRankingsData].sort((a, b) => b.beneficiary_target_pct - a.beneficiary_target_pct);
-                tableHeaderHTML = `
-                    <tr>
-                        <th class="px-4 py-2">Rank</th>
-                        <th class="px-4 py-2">Province</th>
-                        <th class="px-4 py-2">Target %</th>
-                        <th class="px-4 py-2">Beneficiaries</th>
-                        <th class="px-4 py-2">Trainings</th>
-                    </tr>
-                `;
-                tableBody.innerHTML = sortedData.map((item, index) => {
-                     const targetPercentColor = item.beneficiary_target_pct >= 100 ? 'bg-green-500' : (item.beneficiary_target_pct >= 75 ? 'bg-yellow-500' : 'bg-red-500');
-                    return `
-                        <tr class="border-b border-gray-200">
-                            <td class="px-4 py-2 font-medium text-gray-800">${index + 1}</td>
-                            <td class="px-4 py-2 text-gray-700">${item.province}</td>
-                            <td class="px-4 py-2 text-gray-700">
-                                <div class="w-full bg-gray-300 rounded-full h-2.5">
-                                    <div class="${targetPercentColor} h-2.5 rounded-full" style="width: ${Math.min(100, item.beneficiary_target_pct)}%"></div>
-                                </div>
-                                <span class="text-xs text-gray-600">${(item.beneficiary_target_pct || 0).toFixed(1)}%</span>
-                            </td>
-                            <td class="px-4 py-2 text-gray-700">${(item.beneficiaries || 0).toLocaleString()}</td>
-                            <td class="px-4 py-2 text-gray-700">${(item.trainings || 0).toLocaleString()}</td>
-                        </tr>`;
+                    const targetPercentColor = item.beneficiary_target_pct >= 80 ? 'bg-green-500' : (item.beneficiary_target_pct >= 50 ? 'bg-yellow-500' : 'bg-red-500');
+                    return `<tr class="border-b border-gray-200">
+                                <td class="px-4 py-2 font-medium text-gray-800">${index + 1}</td>
+                                <td class="px-4 py-2 text-gray-700">${item.province}</td>
+                                <td class="px-4 py-2 text-gray-700">${(item.beneficiaries || 0).toLocaleString()}</td>
+                                <td class="px-4 py-2 text-gray-700">${(item.trainings || 0).toLocaleString()}</td>
+                                <td class="px-4 py-2 text-gray-700">
+                                    <div class="w-full bg-gray-300 rounded-full h-2.5">
+                                        <div class="${targetPercentColor} h-2.5 rounded-full" style="width: ${Math.min(100, item.beneficiary_target_pct)}%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">${(item.beneficiary_target_pct || 0).toFixed(1)}%</span>
+                                </td>
+                            </tr>`;
                 }).join('');
             } else if (sortMetric === 'district') {
                 const sortedDistricts = Object.entries(districtDataSummary).map(([name, stats]) => ({
-                    name,
-                    trainings: stats.trainings,
-                    beneficiaries: stats.beneficiaries
+                    name, trainings: stats.trainings, beneficiaries: stats.beneficiaries
                 })).sort((a, b) => b.trainings - a.trainings);
                 
-                tableHeaderHTML = `
-                    <tr>
-                        <th class="px-4 py-2">Rank</th>
-                        <th class="px-4 py-2">District</th>
-                        <th class="px-4 py-2">Trainings</th>
-                        <th class="px-4 py-2">Beneficiaries</th>
-                    </tr>
-                `;
-                tableBody.innerHTML = sortedDistricts.map((item, index) => {
-                    return `
-                        <tr class="border-b border-gray-200">
-                            <td class="px-4 py-2 font-medium text-gray-800">${index + 1}</td>
-                            <td class="px-4 py-2 text-gray-700">${item.name}</td>
-                            <td class="px-4 py-2 text-gray-700">${(item.trainings || 0).toLocaleString()}</td>
-                            <td class="px-4 py-2 text-gray-700">${(item.beneficiaries || 0).toLocaleString()}</td>
-                        </tr>`;
-                }).join('');
+                tableHeaderHTML = `<tr><th class="px-4 py-2">Rank</th><th class="px-4 py-2">District</th><th class="px-4 py-2">Trainings</th><th class="px-4 py-2">Beneficiaries</th></tr>`;
+                tableBody.innerHTML = sortedDistricts.map((item, index) => `
+                    <tr class="border-b border-gray-200">
+                        <td class="px-4 py-2 font-medium text-gray-800">${index + 1}</td>
+                        <td class="px-4 py-2 text-gray-700">${item.name}</td>
+                        <td class="px-4 py-2 text-gray-700">${(item.trainings || 0).toLocaleString()}</td>
+                        <td class="px-4 py-2 text-gray-700">${(item.beneficiaries || 0).toLocaleString()}</td>
+                    </tr>`).join('');
             }
 
-            // Update the table header
             rankingTable.querySelector('thead').innerHTML = tableHeaderHTML;
 
             if ((sortMetric !== 'district' && sortedData.length === 0) || (sortMetric === 'district' && Object.keys(districtDataSummary).length === 0)) {
@@ -1513,9 +1315,6 @@
             }
         }
         
-        /**
-         * Updates the top trainers leaderboard table.
-         */
         function updateLeaderboard() {
             const sortedTrainers = leaderboardData;
             const tableBody = document.getElementById('leaderboardTableBody');
@@ -1524,11 +1323,11 @@
                 tableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-2 text-center text-gray-500">No trainer data this month.</td></tr>`;
             } else {
                 sortedTrainers.forEach((item, index) => {
-                    const targetPercentColor = item.target_pct >= 100 ? 'bg-green-500' : (item.target_pct >= 75 ? 'bg-yellow-500' : 'bg-red-500');
+                    const targetPercentColor = item.target_pct >= 80 ? 'bg-green-500' : (item.target_pct >= 50 ? 'bg-yellow-500' : 'bg-red-500');
                     tableBody.innerHTML += `
                         <tr class="border-b border-gray-200">
                             <td class="px-4 py-2 font-medium text-gray-800">${index + 1}</td>
-                            <td class="px-4 py-2 text-gray-700">${item.name}</td>
+                            <td class="px-4 py-2 text-gray-700">${item.name} (${item.district})</td>
                             <td class="px-4 py-2 text-gray-700">${(item.beneficiaries || 0).toLocaleString()}</td>
                             <td class="px-4 py-2 text-gray-700">
                                 <div class="w-full bg-gray-300 rounded-full h-2.5">
@@ -1541,11 +1340,61 @@
             }
         }
 
-        // Initial call to load data and set up the dashboard
         document.addEventListener('DOMContentLoaded', () => {
-            updateTime();
-            setInterval(updateTime, 1000);
-            loadDataAndInitialize();
+            const dashboardContent = document.getElementById('dashboard-content');
+            const passwordOverlay = document.getElementById('password-overlay');
+            const welcomeOverlay = document.getElementById('welcome-overlay');
+            const updateNotification = document.getElementById('update-notification');
+            const passwordInput = document.getElementById('passwordInput');
+            const submitPasswordBtn = document.getElementById('submitPassword');
+            const passwordError = document.getElementById('passwordError');
+
+            function startWelcomeAnimation() {
+                passwordOverlay.style.display = 'none';
+                welcomeOverlay.style.display = 'flex';
+
+                setTimeout(() => {
+                    welcomeOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        welcomeOverlay.style.display = 'none';
+                        dashboardContent.style.display = 'grid';
+                        initializeDashboardAndAutoUpdate();
+                    }, 1000);
+                }, 4000);
+            }
+
+            function initializeDashboardAndAutoUpdate() {
+                async function refreshDashboard(isInitialLoad = false) {
+                    if (!isInitialLoad) {
+                        updateNotification.classList.add('show');
+                    }
+                    updateTime();
+                    await loadDataAndInitialize();
+                    if (!isInitialLoad) {
+                        setTimeout(() => {
+                            updateNotification.classList.remove('show');
+                        }, 2000);
+                    }
+                }
+                
+                refreshDashboard(true);
+                setInterval(() => refreshDashboard(false), 60000);
+                setInterval(updateTime, 1000);
+            }
+
+            submitPasswordBtn.addEventListener('click', () => {
+                if (passwordInput.value === PASSWORD) {
+                    startWelcomeAnimation();
+                } else {
+                    passwordError.classList.remove('hidden');
+                }
+            });
+
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitPasswordBtn.click();
+                }
+            });
         });
     </script>
 </body>

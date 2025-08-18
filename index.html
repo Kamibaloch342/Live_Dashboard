@@ -122,6 +122,8 @@
             color: var(--brand-color);
             animation: fadeInSlideUp 1.5s ease-out;
             animation-delay: 1.5s;
+            text-align: center;
+            padding: 0 1rem;
         }
         .welcome-text-2 {
             font-size: 1.125rem;
@@ -287,6 +289,7 @@
             margin-top: 0.5rem;
             margin-bottom: 1rem;
             justify-content: center;
+            flex-wrap: wrap; /* Allow buttons to wrap on mobile */
         }
         .chart-filter-button {
             padding: 0.5rem 1rem;
@@ -346,6 +349,8 @@
             flex-direction: column;
             align-items: center;
             gap: 1.5rem;
+            width: 90%;
+            max-width: 400px;
         }
         .password-form h2 {
             font-size: 1.5rem;
@@ -377,6 +382,87 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 10px rgba(67, 56, 202, 0.4);
         }
+
+        /* ================================================= */
+        /* == RESPONSIVE STYLES FOR MOBILE AND TABLETS ===== */
+        /* ================================================= */
+        @media screen and (max-width: 768px) {
+            body {
+                overflow-y: scroll; /* Ensure scrolling is always enabled */
+            }
+
+            .dashboard-grid {
+                display: flex;
+                flex-direction: column;
+                height: auto; /* Allow content to determine height */
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+            .card:hover {
+                transform: none; /* Disable hover effect on mobile */
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+                height: auto;
+            }
+            .header > .flex.items-center.justify-center {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+            }
+
+            .header img {
+                height: 2.5rem; /* h-10 */
+            }
+
+            /* Unset all grid properties for mobile */
+            .map-card, .kpi-main, .provincial-summary-card, .monthly-trend-card,
+            .provincial-ranking-card, .leaderboard-card {
+                grid-column: auto;
+                grid-row: auto;
+            }
+
+            .kpi-main {
+                grid-template-columns: 1fr; /* Stack KPI cards vertically */
+                gap: 1rem;
+            }
+
+            .kpi-main .card p {
+                font-size: 2.25rem; /* text-4xl */
+            }
+            
+            .map-card {
+                min-height: 400px; /* Ensure map has enough space */
+            }
+
+            .monthly-trend-card, .provincial-ranking-card, .leaderboard-card {
+                min-height: 350px; /* Ensure charts and tables have space */
+            }
+
+            .welcome-text-1 {
+                font-size: 1.75rem;
+            }
+
+            .welcome-text-2 {
+                font-size: 1rem;
+            }
+
+            .provincial-ranking-card .chart-filter-buttons {
+                gap: 0.5rem;
+            }
+            .provincial-ranking-card .chart-filter-button {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.75rem;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -484,7 +570,7 @@
 
         <div class="card provincial-ranking-card">
             <h3 class="text-md font-bold text-gray-800 flex-shrink-0">Provincial Ranking</h3>
-            <div class="flex gap-2 mb-2">
+            <div class="flex gap-2 mb-2 chart-filter-buttons">
                 <button class="chart-filter-button active" data-sort-metric="beneficiaries">By Beneficiaries</button>
                 <button class="chart-filter-button" data-sort-metric="trainings">By Trainings</button>
                 <button class="chart-filter-button" data-sort-metric="target_achievement">By Target %</button>
@@ -541,7 +627,7 @@
         const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTakZtvQeYjOMxvYbL91Ar8L99Ej3t2hZw2xJjFSqg0HLbaWrVyI7-bc4sS9A4RO4pgCH365J2OcRLt/pub?gid=317105383&single=true&output=csv';
         const TOTAL_PROJECT_TARGET_BENEFICIARIES = 280000;
         const MONTHLY_TARGET_PER_TRAINER = 256;
-        const PASSWORD = "DFLT";
+        const PASSWORD = "DFLT_2025!";
 
         let globalTargets = {
             provinces: {
@@ -1263,7 +1349,7 @@
         }
 
         function updateProvincialRanking() {
-            const activeSortButton = document.querySelector('.provincial-ranking-card .flex.gap-2 .chart-filter-button.active');
+            const activeSortButton = document.querySelector('.provincial-ranking-card .chart-filter-buttons .active');
             const sortMetric = activeSortButton ? activeSortButton.dataset.sortMetric : 'beneficiaries';
             const tableBody = document.getElementById('provincialRankingTableBody');
             const rankingTable = document.getElementById('rankingTable');
@@ -1357,7 +1443,7 @@
                     welcomeOverlay.style.opacity = '0';
                     setTimeout(() => {
                         welcomeOverlay.style.display = 'none';
-                        dashboardContent.style.display = 'grid';
+                        dashboardContent.style.display = 'grid'; // Changed to grid
                         initializeDashboardAndAutoUpdate();
                     }, 1000);
                 }, 4000);
@@ -1399,4 +1485,3 @@
     </script>
 </body>
 </html>
-

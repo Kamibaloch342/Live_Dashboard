@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Phase 2 - Deployment Dashboard</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --font-family: 'Montserrat', sans-serif;
+            --bg-color: #F3F4F6;
+            --text-color: #1F2937;
+            --text-muted: #6B7280;
+            --accent-color: #4F46E5;
+            --danger-color: #EF4444;
+            --success-color: #22C55E;
+            --success-dark-color: #15803d;
+            --warning-color: #F59E0B;
+            --global-rural-color: #0d9488; /* Teal */
+            --global-urban-color: #7c3aed; /* Purple */
+            --sidebar-bg: rgba(255, 255, 255, 0.55);
+            --tooltip-bg: rgba(255, 255, 255, 0.85);
+            --item-bg: rgba(255, 255, 255, 0.3);
+            --item-hover-bg: rgba(255, 255, 255, 0.7);
+            --border-color: rgba(229, 231, 235, 1);
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --blur-intensity: 15px;
+        }
+
+        body.dark-mode {
+            --bg-color: #111827;
+            --text-color: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --accent-color: #6366F1;
+            --danger-color: #F87171;
+            --success-color: #4ADE80;
+            --success-dark-color: #22c55e;
+            --warning-color: #FBBF24;
+            --global-rural-color: #2dd4bf;
+            --global-urban-color: #a78bfa;
+            --sidebar-bg: rgba(29, 41, 59, 0.5);
+            --tooltip-bg: rgba(29, 41, 59, 0.8);
+            --item-bg: rgba(55, 65, 81, 0.4);
+            --item-hover-bg: rgba(55, 65, 81, 0.8);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --shadow-color: rgba(0, 0, 0, 0.25);
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            color: var(--text-color);
+            overflow: hidden;
+            background-color: var(--bg-color);
+            transition: background-color 0.5s ease;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            z-index: -1;
+            background: linear-gradient(45deg, rgba(79, 70, 229, 0.15), rgba(99, 102, 241, 0.1), rgba(239, 68, 68, 0.15), rgba(59, 130, 246, 0.15));
+            animation: gradient-pan 25s ease infinite;
+        }
+        body.dark-mode::before {
+            background: linear-gradient(45deg, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.15), rgba(239, 68, 68, 0.1), rgba(14, 165, 233, 0.15));
+        }
+
+        .dashboard-container {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+            animation: fade-in 0.8s ease;
+        }
+        #map-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+        .leaflet-tile-pane {
+            transition: filter 0.5s ease;
+        }
+        .dark-mode .leaflet-tile-pane {
+            filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+        }
+
+        #sidebar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            bottom: 20px;
+            width: 380px;
+            z-index: 1001;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(var(--blur-intensity));
+            -webkit-backdrop-filter: blur(var(--blur-intensity));
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 var(--shadow-color);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .sidebar-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0 0 5px 0;
+            color: var(--accent-color);
+            letter-spacing: -1px;
+        }
+        .sidebar-header .subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        #theme-toggle {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px 10px;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            margin-left: 15px;
+        }
+        #theme-toggle:hover {
+            background: var(--item-hover-bg);
+            color: var(--text-color);
+            transform: scale(1.05) rotate(15deg);
+        }
+        #theme-toggle i {
+            transition: transform 0.4s ease;
+        }
+
+        .sidebar-section-header {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+            color: var(--text-color);
+        }
+        .sidebar-section-header i {
+            margin-right: 8px;
+            color: var(--text-muted);
+        }
+        .sidebar-section-header:focus,
+        .filter-group select:focus,
+        .district-item:focus {
+            outline: none;
+        }
+
+        #overview-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--item-bg);
+            border-radius: 14px;
+        }
+        .overview-stat {
+            text-align: center;
+        }
+        .overview-stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent-color);
+        }
+        .overview-stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        #global-classification-chart {
+            margin-bottom: 20px;
+        }
+        #global-classification-chart .rural {
+            background-color: var(--global-rural-color);
+        }
+        #global-classification-chart .urban {
+            background-color: var(--global-urban-color);
+        }
+
+        .sidebar-filters {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1;
+        }
+        .filter-group label {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+            text-transform: uppercase;
+        }
+        .filter-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--item-bg);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            font-size: 14px;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%239ca3af' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            cursor: pointer;
+        }
+
+        #district-list-container {
+            flex-grow: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        #district-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-right: -10px;
+        }
+        #district-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        #district-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #district-list::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 10px;
+        }
+
+        .district-item {
+            padding: 12px 15px;
+            border-radius: 14px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+            background-color: var(--item-bg);
+            transition: all 0.25s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            position: relative;
+        }
+        .district-item:hover {
+            background-color: var(--item-hover-bg);
+            transform: scale(1.02);
+            border-color: var(--border-color);
+            box-shadow: 0 0 12px 0px var(--accent-color);
+        }
+        .district-item.active {
+            color: white;
+            transform: scale(1.03);
+            background-color: var(--accent-color);
+            box-shadow: 0 0 20px 3px var(--accent-color);
+        }
+        .district-item.active .district-name,
+        .district-item.active .stat-label,
+        .district-item.active .stat-value,
+        .district-item.active .balance-bar div,
+        .district-item.active .balance-text {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .district-item.active .balance-bar {
+            background-color: rgba(255,255,255,0.2) !important;
+        }
+
+        .district-item.active[data-district-color] {
+            background-color: var(--district-active-color);
+            box-shadow: 0 0 20px 3px var(--district-active-color);
+        }
+
+        .district-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .district-name {
+            font-weight: 700;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+        .district-item.active .district-name {
+            animation: text-pulse 1.5s infinite alternate;
+        }
+
+        .district-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .stat-block {
+            text-align: left;
+        }
+        .stat-value {
+            font-weight: 800;
+            font-size: 18px;
+        }
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .balance-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+        .balance-bar div {
+            transform-origin: left;
+            animation: fill-bar 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        .balance-bar .rural {
+            background-color: var(--warning-color);
+        }
+        .balance-bar .urban {
+            background-color: var(--accent-color);
+        }
+        .balance-text {
+            font-size: 11px;
+            text-align: center;
+            margin-top: 5px;
+            color: var(--text-muted);
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: var(--tooltip-bg);
+            backdrop-filter: blur(var(--blur-intensity));
+            -webkit-backdrop-filter: blur(var(--blur-intensity));
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px 0 var(--shadow-color);
+            border-radius: 16px;
+            padding: 0;
+        }
+        .custom-popup .leaflet-popup-content {
+            font-family: var(--font-family);
+            margin: 0;
+            animation: fade-in-scale 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+        }
+        .custom-popup .leaflet-popup-tip {
+            background: var(--tooltip-bg);
+        }
+        .tooltip-header {
+            padding: 15px 20px;
+        }
+        .tooltip-header .district {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .tooltip-header .name {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 2px 0 0 0;
+        }
+        .tooltip-body {
+            padding: 15px 20px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .tooltip-body h4 {
+            font-size: 13px;
+            margin: 15px 0 10px 0;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        .trainer-entry {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.03);
+            border-left: 4px solid var(--text-muted);
+        }
+        .trainer-entry.top-performer {
+            border-left-color: var(--success-color);
+        }
+        .dark-mode .trainer-entry {
+            background: rgba(255,255,255,0.06);
+        }
+        .trainer-name {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .trainer-details {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 6px 10px;
+            align-items: center;
+        }
+        .trainer-details i {
+            color: var(--text-muted);
+            width: 14px;
+            text-align: center;
+        }
+
+        /* Marker Styling */
+        .leaflet-marker-icon {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease-in-out;
+            position: relative; /* Needed for absolute positioning of pulse effect */
+        }
+        .leaflet-marker-icon:hover {
+            transform: scale(1.2);
+        }
+
+        /* District Marker Specific Style - Larger Icon */
+        .district-marker .fa-map-marker-alt {
+            font-size: 45px; /* Significantly larger for districts */
+        }
+        /* Tehsil Marker Specific Style - Smaller Icon */
+        .tehsil-marker .fa-location-dot {
+            font-size: 28px; /* Slightly larger than previous, but still smaller than district */
+        }
+
+        /* Live Location Pulse Effect */
+        .live-location-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background-color: var(--marker-color); /* Uses the district's color */
+            animation: pulse-circle-animation 2s infinite ease-out; /* Apply animation directly */
+            opacity: 0;
+            z-index: -1; /* Behind the actual marker icon */
+        }
+
+        /* Glow animation for active district marker (still on click for a special highlight) */
+        .district-marker.active-glow .fa-map-marker-alt {
+            animation: pulse-glow 1.5s infinite alternate;
+        }
+
+        /* Pulsing animation for the active district marker's icon */
+        @keyframes pulse-glow {
+            from {
+                filter: drop-shadow(0 0 5px var(--marker-color));
+                transform: scale(1.0);
+            }
+            to {
+                filter: drop-shadow(0 0 20px var(--marker-color)) drop-shadow(0 0 30px var(--marker-color));
+                transform: scale(1.15);
+            }
+        }
+
+        /* Text pulse animation for active district name in sidebar */
+        @keyframes text-pulse {
+            0% {
+                color: rgba(255, 255, 255, 0.9);
+                text-shadow: none;
+            }
+            50% {
+                color: white;
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6);
+            }
+            100% {
+                color: rgba(255, 255, 255, 0.9);
+                text-shadow: none;
+            }
+        }
+
+        /* Keyframes for the new live location pulsing circle */
+        @keyframes pulse-circle-animation {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.7;
+            }
+            100% {
+                width: 100px; /* Max size of the pulse */
+                height: 100px;
+                opacity: 0;
+            }
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes gradient-pan {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fade-in-scale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fill-bar {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <div>
+                    <h1>DFLT-2 | SSPA Districts</h1>
+                    <p class="subtitle" id="sidebar-subtitle">Developed by Center of Adaptive Social Protection & Economic Empowerment - SDPI</p>
+                </div>
+                <button id="theme-toggle" title="Toggle Dark Mode"><i class="fa-solid fa-moon"></i></button>
+            </div>
+
+            <div class="sidebar-section-header"><i class="fa-solid fa-chart-pie"></i>Overview</div>
+            <div id="overview-stats"></div>
+
+            <div id="global-classification-chart"></div>
+
+            <div class="sidebar-filters">
+                <div class="filter-group">
+                    <label for="district-filter">District</label>
+                    <select id="district-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="rural-urban-filter">Classification</label>
+                    <select id="rural-urban-filter">
+                        <option value="All">All</option>
+                        <option value="Rural">Rural</option>
+                        <option value="Urban">Urban</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="district-list-container">
+                <div class="sidebar-section-header"><i class="fa-solid fa-map-location-dot"></i>Districts</div>
+                <div id="district-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- DATA SOURCE ---
+            const initialTehsilCoords = {
+                "BADIN": [24.65, 68.83], "GOLARCHI": [24.60, 68.75], "MATLI": [25.03, 68.65], "TALHAR": [24.84, 68.80], "TANDO BAGO": [24.79, 69.00],
+                "DAHARKI": [27.97, 69.51], "GHOTKI": [28.02, 69.32], "KHANGARH": [27.87, 69.41], "MIRPUR MATHELO": [27.85, 69.55], "UBAURO": [28.16, 69.73],
+                "GARHI KHAIRO": [28.05, 67.98], "JACOBABAD": [28.28, 68.44], "THUL": [28.24, 68.77],
+                "KAMBAR ALI KHAN": [27.58, 67.98], "MIRO KHAN": [27.76, 68.09], "NASIRABAD": [27.38, 67.91], "QUBO SAEED KHAN": [27.95, 67.88], "SHAHDADKOT": [27.84, 67.91], "SUJAWAL JUNEJO": [27.50, 68.06], "WARAH": [27.44, 67.79],
+                "KANDHKOT": [28.24, 69.18], "KASHMORE": [28.43, 69.58], "TANGWANI": [28.32, 69.33],
+                "HALA": [25.82, 68.41], "MATIARI": [25.59, 68.45], "SAEEDABAD": [26.04, 68.27],
+                "DIGRI": [25.15, 69.11], "HUSSAIN BUX MARI": [25.75, 69.10], "JHUDO": [24.96, 69.31], "KOT GHULAM MUHAMMAD": [25.30, 69.28], "MIRPUR KHAS": [25.52, 69.01], "SHUJAABAD": [25.43, 69.08], "SINDHRI": [25.71, 69.08],
+                "JAM NAWAZ ALI": [25.86, 69.21], "KHIPRO": [26.00, 69.38], "SANGHAR": [26.04, 68.95], "SHAHDADPUR": [26.15, 68.64], "SINJHORO": [26.24, 68.81], "TANDO ADAM": [25.77, 68.66],
+                "GARHI YASIN": [27.90, 68.51], "KHANPUR": [27.83, 68.41], "LAKHI": [27.86, 68.67], "SHIKARPUR": [27.95, 68.63],
+                "JATI": [24.35, 68.26], "KHARO CHAN": [24.12, 67.55], "MIRPUR BATHORO": [24.73, 68.26], "SHAH BUNDER": [24.18, 67.90], "SUJAWAL": [24.60, 68.07],
+                "CHAMBER": [25.29, 68.80], "JHANDO MARI": [25.55, 68.72], "NASARPUR": [25.51, 68.63], "TANDO ALLAH YAR": [25.46, 68.71],
+                "BULRI SHAH KARIM": [25.04, 68.45], "TANDO GHULAM HYDER": [25.07, 68.74], "TANDO MUHAMMAD KHAN": [25.12, 68.53],
+                "CHACHRO": [25.11, 70.25], "DAHLI": [24.59, 70.43], "DIPLO": [24.46, 69.58], "ISLAMKOT": [24.70, 70.17], "KALOI": [24.81, 69.83], "MITHI": [24.74, 69.80], "NAGAR PARKAR": [24.35, 70.75],
+                "GHORABARI": [24.51, 67.92], "KETI BUNDER": [24.14, 67.45], "MIRPUR SAKRO": [24.54, 67.63], "THATTA": [24.74, 67.92],
+                "KUNRI": [25.20, 69.55], "PITHORO": [25.52, 69.38], "SAMARO": [25.29, 69.41], "UMER KOT": [25.35, 69.73]
+            };
+
+            // --- MAP INITIALIZATION ---
+            const map = L.map('map', { center: [27.5, 68.5], zoom: 7, zoomControl: false });
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }).addTo(map);
+
+            // --- DOM ELEMENT REFERENCES ---
+            const districtFilter = document.getElementById('district-filter');
+            const ruralUrbanFilter = document.getElementById('rural-urban-filter');
+            const districtListContainer = document.getElementById('district-list');
+            const overviewStatsContainer = document.getElementById('overview-stats');
+            const layers = {
+                districts: L.layerGroup().addTo(map), // Layer for district markers
+                tehsils: L.layerGroup().addTo(map)    // Layer for tehsil markers
+            };
+
+            let allProcessedData = {};
+            let grandTotals = {};
+            let activeDistrictMarker = null;
+
+            // --- COLOR GENERATION ---
+            function generateColor(index) {
+                const hue = (index * 137.508) % 360;
+                return `hsl(${hue}, 70%, 60%)`;
+            }
+
+            // --- DATA LOADING & PRE-PROCESSING (Hardcoded Data) ---
+            function loadData() {
+                const rawData = {
+                    "BADIN": {
+                        "name": "BADIN",
+                        "tehsils": {
+                            "BADIN": { "name": "BADIN", "district": "BADIN", "coords": [24.65, 68.83], "trainers": [{"ruralUrban": "Urban", "headCount": 21213}] },
+                            "GOLARCHI": { "name": "GOLARCHI", "district": "BADIN", "coords": [24.60, 68.75], "trainers": [{"ruralUrban": "Rural", "headCount": 11960}] },
+                            "MATLI": { "name": "MATLI", "district": "BADIN", "coords": [25.03, 68.65], "trainers": [{"ruralUrban": "Rural", "headCount": 14231}] },
+                            "TALHAR": { "name": "TALHAR", "district": "BADIN", "coords": [24.84, 68.80], "trainers": [{"ruralUrban": "Rural", "headCount": 10330}] },
+                            "TANDO BAGO": { "name": "TANDO BAGO", "district": "BADIN", "coords": [24.79, 69.00], "trainers": [{"ruralUrban": "Rural", "headCount": 13803}] }
+                        }
+                    },
+                    "GHOTKI": {
+                        "name": "GHOTKI",
+                        "tehsils": {
+                            "DAHARKI": { "name": "DAHARKI", "district": "GHOTKI", "coords": [27.97, 69.51], "trainers": [{"ruralUrban": "Rural", "headCount": 7311}] },
+                            "GHOTKI": { "name": "GHOTKI", "district": "GHOTKI", "coords": [28.02, 69.32], "trainers": [{"ruralUrban": "Urban", "headCount": 21544}] },
+                            "KHANGARH": { "name": "KHANGARH", "district": "GHOTKI", "coords": [27.87, 69.41], "trainers": [{"ruralUrban": "Rural", "headCount": 8194}] },
+                            "MIRPUR MATHELO": { "name": "MIRPUR MATHELO", "district": "GHOTKI", "coords": [27.85, 69.55], "trainers": [{"ruralUrban": "Urban", "headCount": 21335}] },
+                            "UBAURO": { "name": "UBAURO", "district": "GHOTKI", "coords": [28.16, 69.73], "trainers": [{"ruralUrban": "Rural", "headCount": 13840}] }
+                        }
+                    },
+                    "JACOBABAD": {
+                        "name": "JACOBABAD",
+                        "tehsils": {
+                            "GARHI KHAIRO": { "name": "GARHI KHAIRO", "district": "JACOBABAD", "coords": [28.05, 67.98], "trainers": [{"ruralUrban": "Rural", "headCount": 8386}] },
+                            "JACOBABAD": { "name": "JACOBABAD", "district": "JACOBABAD", "coords": [28.28, 68.44], "trainers": [{"ruralUrban": "Urban", "headCount": 18145}] },
+                            "THUL": { "name": "THUL", "district": "JACOBABAD", "coords": [28.24, 68.77], "trainers": [{"ruralUrban": "Rural", "headCount": 26393}] }
+                        }
+                    },
+                    "KAMBAR SHAHDADKOT": {
+                        "name": "KAMBAR SHAHDADKOT",
+                        "tehsils": {
+                            "KAMBAR ALI KHAN": { "name": "KAMBAR ALI KHAN", "district": "KAMBAR SHAHDADKOT", "coords": [27.58, 67.98], "trainers": [{"ruralUrban": "Urban", "headCount": 16071}] },
+                            "MIRO KHAN": { "name": "MIRO KHAN", "district": "KAMBAR SHAHDADKOT", "coords": [27.76, 68.09], "trainers": [{"ruralUrban": "Rural", "headCount": 6986}] },
+                            "NASIRABAD": { "name": "NASIRABAD", "district": "KAMBAR SHAHDADKOT", "coords": [27.38, 67.91], "trainers": [{"ruralUrban": "Rural", "headCount": 7336}] },
+                            "QUBO SAEED KHAN": { "name": "QUBO SAEED KHAN", "district": "KAMBAR SHAHDADKOT", "coords": [27.95, 67.88], "trainers": [{"ruralUrban": "Rural", "headCount": 261}] },
+                            "SHAHDADKOT": { "name": "SHAHDADKOT", "district": "KAMBAR SHAHDADKOT", "coords": [27.84, 67.91], "trainers": [{"ruralUrban": "Urban", "headCount": 4909}] },
+                            "SUJAWAL JUNEJO": { "name": "SUJAWAL JUNEJO", "district": "KAMBAR SHAHDADKOT", "coords": [27.50, 68.06], "trainers": [{"ruralUrban": "Rural", "headCount": 6530}] },
+                            "WARAH": { "name": "WARAH", "district": "KAMBAR SHAHDADKOT", "coords": [27.44, 67.79], "trainers": [{"ruralUrban": "Rural", "headCount": 10789}] }
+                        }
+                    },
+                    "KASHMORE": {
+                        "name": "KASHMORE",
+                        "tehsils": {
+                            "KANDHKOT": { "name": "KANDHKOT", "district": "KASHMORE", "coords": [28.24, 69.18], "trainers": [{"ruralUrban": "Urban", "headCount": 12555}] },
+                            "KASHMORE": { "name": "KASHMORE", "district": "KASHMORE", "coords": [28.43, 69.58], "trainers": [{"ruralUrban": "Urban", "headCount": 20229}] },
+                            "TANGWANI": { "name": "TANGWANI", "district": "KASHMORE", "coords": [28.32, 69.33], "trainers": [{"ruralUrban": "Rural", "headCount": 19485}] }
+                        }
+                    },
+                    "MATIARI": {
+                        "name": "MATIARI",
+                        "tehsils": {
+                            "HALA": { "name": "HALA", "district": "MATIARI", "coords": [25.82, 68.41], "trainers": [{"ruralUrban": "Rural", "headCount": 9540}] },
+                            "MATIARI": { "name": "MATIARI", "district": "MATIARI", "coords": [25.59, 68.45], "trainers": [{"ruralUrban": "Urban", "headCount": 12149}] },
+                            "SAEEDABAD": { "name": "SAEEDABAD", "district": "MATIARI", "coords": [26.04, 68.27], "trainers": [{"ruralUrban": "Rural", "headCount": 7528}] }
+                        }
+                    },
+                    "MIRPUR KHAS": {
+                        "name": "MIRPUR KHAS",
+                        "tehsils": {
+                            "DIGRI": { "name": "DIGRI", "district": "MIRPUR KHAS", "coords": [25.15, 69.11], "trainers": [{"ruralUrban": "Rural", "headCount": 7628}] },
+                            "HUSSAIN BUX MARI": { "name": "HUSSAIN BUX MARI", "district": "MIRPUR KHAS", "coords": [25.75, 69.10], "trainers": [{"ruralUrban": "Rural", "headCount": 8436}] },
+                            "JHUDO": { "name": "JHUDO", "district": "MIRPUR KHAS", "coords": [24.96, 69.31], "trainers": [{"ruralUrban": "Rural", "headCount": 9122}] },
+                            "KOT GHULAM MUHAMMAD": { "name": "KOT GHULAM MUHAMMAD", "district": "MIRPUR KHAS", "coords": [25.30, 69.28], "trainers": [{"ruralUrban": "Rural", "headCount": 10133}] },
+                            "MIRPUR KHAS": { "name": "MIRPUR KHAS", "district": "MIRPUR KHAS", "coords": [25.52, 69.01], "trainers": [{"ruralUrban": "Urban", "headCount": 5518}] },
+                            "SHUJAABAD": { "name": "SHUJAABAD", "district": "MIRPUR KHAS", "coords": [25.43, 69.08], "trainers": [{"ruralUrban": "Rural", "headCount": 8524}] },
+                            "SINDHRI": { "name": "SINDHRI", "district": "MIRPUR KHAS", "coords": [25.71, 69.08], "trainers": [{"ruralUrban": "Rural", "headCount": 12047}] }
+                        }
+                    },
+                    "SANGHAR": {
+                        "name": "SANGHAR",
+                        "tehsils": {
+                            "JAM NAWAZ ALI": { "name": "JAM NAWAZ ALI", "district": "SANGHAR", "coords": [25.86, 69.21], "trainers": [{"ruralUrban": "Rural", "headCount": 8045}] },
+                            "KHIPRO": { "name": "KHIPRO", "district": "SANGHAR", "coords": [26.00, 69.38], "trainers": [{"ruralUrban": "Rural", "headCount": 14052}] },
+                            "SANGHAR": { "name": "SANGHAR", "district": "SANGHAR", "coords": [26.04, 68.95], "trainers": [{"ruralUrban": "Urban", "headCount": 17002}] },
+                            "SHAHDADPUR": { "name": "SHAHDADPUR", "district": "SANGHAR", "coords": [26.15, 68.64], "trainers": [{"ruralUrban": "Urban", "headCount": 13152}] },
+                            "SINJHORO": { "name": "SINJHORO", "district": "SANGHAR", "coords": [26.24, 68.81], "trainers": [{"ruralUrban": "Rural", "headCount": 14786}] },
+                            "TANDO ADAM": { "name": "TANDO ADAM", "district": "SANGHAR", "coords": [25.77, 68.66], "trainers": [{"ruralUrban": "Urban", "headCount": 10194}] }
+                        }
+                    },
+                    "SHIKARPUR": {
+                        "name": "SHIKARPUR",
+                        "tehsils": {
+                            "GARHI YASIN": { "name": "GARHI YASIN", "district": "SHIKARPUR", "coords": [27.90, 68.51], "trainers": [{"ruralUrban": "Rural", "headCount": 3895}] },
+                            "KHANPUR": { "name": "KHANPUR", "district": "SHIKARPUR", "coords": [27.83, 68.41], "trainers": [{"ruralUrban": "Rural", "headCount": 6705}] },
+                            "LAKHI": { "name": "LAKHI", "district": "SHIKARPUR", "coords": [27.86, 68.67], "trainers": [{"ruralUrban": "Rural", "headCount": 18889}] },
+                            "SHIKARPUR": { "name": "SHIKARPUR", "district": "SHIKARPUR", "coords": [27.95, 68.63], "trainers": [{"ruralUrban": "Urban", "headCount": 8424}] }
+                        }
+                    },
+                    "SUJAWAL": {
+                        "name": "SUJAWAL",
+                        "tehsils": {
+                            "JATI": { "name": "JATI", "district": "SUJAWAL", "coords": [24.35, 68.26], "trainers": [{"ruralUrban": "Rural", "headCount": 6368}] },
+                            "KHARO CHAN": { "name": "KHARO CHAN", "district": "SUJAWAL", "coords": [24.12, 67.55], "trainers": [{"ruralUrban": "Rural", "headCount": 0}] },
+                            "MIRPUR BATHORO": { "name": "MIRPUR BATHORO", "district": "SUJAWAL", "coords": [24.73, 68.26], "trainers": [{"ruralUrban": "Rural", "headCount": 7803}] },
+                            "SHAH BUNDER": { "name": "SHAH BUNDER", "district": "SUJAWAL", "coords": [24.18, 67.90], "trainers": [{"ruralUrban": "Rural", "headCount": 3777}] },
+                            "SUJAWAL": { "name": "SUJAWAL", "district": "SUJAWAL", "coords": [24.60, 68.07], "trainers": [{"ruralUrban": "Urban", "headCount": 8238}] }
+                        }
+                    },
+                    "TANDO ALLAH YAR": {
+                        "name": "TANDO ALLAH YAR",
+                        "tehsils": {
+                            "CHAMBER": { "name": "CHAMBER", "district": "TANDO ALLAH YAR", "coords": [25.29, 68.80], "trainers": [{"ruralUrban": "Rural", "headCount": 11593}] },
+                            "JHANDO MARI": { "name": "JHANDO MARI", "district": "TANDO ALLAH YAR", "coords": [25.55, 68.72], "trainers": [{"ruralUrban": "Rural", "headCount": 11432}] },
+                            "NASARPUR": { "name": "NASARPUR", "district": "TANDO ALLAH YAR", "coords": [25.51, 68.63], "trainers": [{"ruralUrban": "Rural", "headCount": 2134}] },
+                            "TANDO ALLAH YAR": { "name": "TANDO ALLAH YAR", "district": "TANDO ALLAH YAR", "coords": [25.46, 68.71], "trainers": [{"ruralUrban": "Urban", "headCount": 9405}] }
+                        }
+                    },
+                    "TANDO MUHAMMAD KHAN": {
+                        "name": "TANDO MUHAMMAD KHAN",
+                        "tehsils": {
+                            "BULRI SHAH KARIM": { "name": "BULRI SHAH KARIM", "district": "TANDO MUHAMMAD KHAN", "coords": [25.04, 68.45], "trainers": [{"ruralUrban": "Rural", "headCount": 13101}] },
+                            "TANDO GHULAM HYDER": { "name": "TANDO GHULAM HYDER", "district": "TANDO MUHAMMAD KHAN", "coords": [25.07, 68.74], "trainers": [{"ruralUrban": "Rural", "headCount": 5816}] },
+                            "TANDO MUHAMMAD KHAN": { "name": "TANDO MUHAMMAD KHAN", "district": "TANDO MUHAMMAD KHAN", "coords": [25.12, 68.53], "trainers": [{"ruralUrban": "Urban", "headCount": 9973}] }
+                        }
+                    },
+                    "THARPARKAR": {
+                        "name": "THARPARKAR",
+                        "tehsils": {
+                            "CHACHRO": { "name": "CHACHRO", "district": "THARPARKAR", "coords": [25.11, 70.25], "trainers": [{"ruralUrban": "Rural", "headCount": 11308}] },
+                            "DAHLI": { "name": "DAHLI", "district": "THARPARKAR", "coords": [24.59, 70.43], "trainers": [{"ruralUrban": "Rural", "headCount": 3962}] },
+                            "DIPLO": { "name": "DIPLO", "district": "THARPARKAR", "coords": [24.46, 69.58], "trainers": [{"ruralUrban": "Rural", "headCount": 5872}] },
+                            "ISLAMKOT": { "name": "ISLAMKOT", "district": "THARPARKAR", "coords": [24.70, 70.17], "trainers": [{"ruralUrban": "Rural", "headCount": 14600}] },
+                            "KALOI": { "name": "KALOI", "district": "THARPARKAR", "coords": [24.81, 69.83], "trainers": [{"ruralUrban": "Rural", "headCount": 9369}] },
+                            "MITHI": { "name": "MITHI", "district": "THARPARKAR", "coords": [24.74, 69.80], "trainers": [{"ruralUrban": "Urban", "headCount": 13074}] },
+                            "NAGAR PARKAR": { "name": "NAGAR PARKAR", "district": "THARPARKAR", "coords": [24.35, 70.75], "trainers": [{"ruralUrban": "Urban", "headCount": 13026}] }
+                        }
+                    },
+                    "THATTA": {
+                        "name": "THATTA",
+                        "tehsils": {
+                            "GHORABARI": { "name": "GHORABARI", "district": "THATTA", "coords": [24.51, 67.92], "trainers": [{"ruralUrban": "Rural", "headCount": 4418}] },
+                            "KETI BUNDER": { "name": "KETI BUNDER", "district": "THATTA", "coords": [24.14, 67.45], "trainers": [{"ruralUrban": "Rural", "headCount": 692}] },
+                            "MIRPUR SAKRO": { "name": "MIRPUR SAKRO", "district": "THATTA", "coords": [24.54, 67.63], "trainers": [{"ruralUrban": "Rural", "headCount": 11857}] },
+                            "THATTA": { "name": "THATTA", "district": "THATTA", "coords": [24.74, 67.92], "trainers": [{"ruralUrban": "Urban", "headCount": 11805}] }
+                        }
+                    },
+                    "UMER KOT": {
+                        "name": "UMER KOT",
+                        "tehsils": {
+                            "KUNRI": { "name": "KUNRI", "district": "UMER KOT", "coords": [25.20, 69.55], "trainers": [{"ruralUrban": "Rural", "headCount": 13088}] },
+                            "PITHORO": { "name": "PITHORO", "district": "UMER KOT", "coords": [25.52, 69.38], "trainers": [{"ruralUrban": "Rural", "headCount": 11045}] },
+                            "SAMARO": { "name": "SAMARO", "district": "UMER KOT", "coords": [25.29, 69.41], "trainers": [{"ruralUrban": "Rural", "headCount": 8045}] },
+                            "UMER KOT": { "name": "UMER KOT", "district": "UMER KOT", "coords": [25.35, 69.73], "trainers": [{"ruralUrban": "Urban", "headCount": 29453}] }
+                        }
+                    }
+                };
+
+                // Calculate summary statistics
+                Object.values(rawData).forEach(district => {
+                    let totalTrainers = 0;
+                    let totalHeadCount = 0;
+                    let ruralCount = 0;
+                    let urbanCount = 0;
+
+                    Object.values(district.tehsils).forEach(tehsil => {
+                        tehsil.trainers.forEach(trainer => {
+                            totalTrainers++;
+                            totalHeadCount += trainer.headCount;
+                            if (trainer.ruralUrban === 'Rural') {
+                                ruralCount += trainer.headCount;
+                            } else {
+                                urbanCount += trainer.headCount;
+                            }
+                        });
+                    });
+
+                    district.totalTrainers = totalTrainers;
+                    district.totalHeadCount = totalHeadCount;
+                    district.ruralCount = ruralCount;
+                    district.urbanCount = urbanCount;
+                });
+
+                const districtNames = Object.keys(rawData);
+                districtNames.forEach((name, index) => {
+                    rawData[name].color = generateColor(index);
+                });
+
+                allProcessedData = rawData;
+                calculateGrandTotals();
+                console.log("✅ Data successfully loaded from hardcoded object");
+                return true;
+            }
+
+            function calculateGrandTotals() {
+                const allDistricts = Object.values(allProcessedData);
+                grandTotals = {
+                    districts: allDistricts.length,
+                    tehsils: allDistricts.reduce((sum, d) => sum + Object.keys(d.tehsils).length, 0),
+                    trainers: allDistricts.reduce((sum, d) => sum + d.totalTrainers, 0),
+                    headcount: allDistricts.reduce((sum, d) => sum + d.totalHeadCount, 0),
+                    totalRural: allDistricts.reduce((sum, d) => sum + d.ruralCount, 0),
+                    totalUrban: allDistricts.reduce((sum, d) => sum + d.urbanCount, 0),
+                };
+            }
+
+            // --- UI & MAP RENDERING ---
+            function initializeDashboard() {
+                populateFilters();
+                addEventListeners();
+                updateDisplay();
+            }
+
+            function populateFilters() {
+                const districtNames = ['All', ...Object.keys(allProcessedData).sort()];
+                districtFilter.innerHTML = districtNames.map(d => `<option value="${d}">${d}</option>`).join('');
+            }
+
+            function addEventListeners() {
+                districtFilter.addEventListener('change', updateDisplay);
+                ruralUrbanFilter.addEventListener('change', updateDisplay);
+                document.getElementById('theme-toggle').addEventListener('click', () => {
+                    document.body.classList.toggle('dark-mode');
+                    const icon = document.querySelector('#theme-toggle i');
+                    icon.classList.toggle('fa-moon', !document.body.classList.contains('dark-mode'));
+                    icon.classList.toggle('fa-sun', document.body.classList.contains('dark-mode'));
+                });
+            }
+
+            function updateOverviewPanel(stats) {
+                overviewStatsContainer.innerHTML = `
+                    <div class="overview-stat">
+                        <div class="overview-stat-value">${stats.districts.toLocaleString()}</div>
+                        <div class="overview-stat-label">Districts</div>
+                    </div>
+                    <div class="overview-stat">
+                        <div class="overview-stat-value">${stats.tehsils.toLocaleString()}</div>
+                        <div class="overview-stat-label">Tehsils</div>
+                    </div>
+                    <div class="overview-stat">
+                        <div class="overview-stat-value">${stats.trainers.toLocaleString()}</div>
+                        <div class="overview-stat-label">Trainers</div>
+                    </div>
+                    <div class="overview-stat">
+                        <div class="overview-stat-value">${stats.headcount.toLocaleString()}</div>
+                        <div class="overview-stat-label">Beneficiaries</div>
+                    </div>
+                `;
+            }
+
+            function updateGlobalClassificationChart() {
+                const container = document.getElementById('global-classification-chart');
+                const total = grandTotals.totalRural + grandTotals.totalUrban;
+                if (total === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+                const ruralPercent = (grandTotals.totalRural / total) * 100;
+                const urbanPercent = (grandTotals.totalUrban / total) * 100;
+
+                container.innerHTML = `
+                    <div class="sidebar-section-header" style="margin-top: 20px;"><i class="fa-solid fa-globe"></i>Rural / Urban classification</div>
+                    <div class="balance-bar">
+                        <div class="rural" style="width: ${ruralPercent}%;" title="${ruralPercent.toFixed(1)}% Rural"></div>
+                        <div class="urban" style="width: ${urbanPercent}%;" title="${urbanPercent.toFixed(1)}% Urban"></div>
+                    </div>
+                    <div class="balance-text">${ruralPercent.toFixed(0)}% Rural / ${urbanPercent.toFixed(0)}% Urban</div>
+                `;
+            }
+
+            function updateDisplay() {
+                layers.districts.clearLayers();
+                layers.tehsils.clearLayers();
+                districtListContainer.innerHTML = '';
+                activeDistrictMarker = null;
+
+                const selectedDistrict = districtFilter.value;
+                const selectedClassification = ruralUrbanFilter.value;
+
+                let districtsToDisplay = Object.values(allProcessedData).filter(d =>
+                    selectedDistrict === 'All' || d.name === selectedDistrict
+                );
+
+                let currentStats = { districts: 0, tehsils: 0, trainers: 0, headcount: 0 };
+                const bounds = [];
+
+                districtsToDisplay.forEach(district => {
+                    let tehsilsInView = Object.values(district.tehsils);
+                    if (selectedClassification !== 'All') {
+                        tehsilsInView = tehsilsInView.filter(tehsil =>
+                            tehsil.trainers.some(t => t.ruralUrban === selectedClassification)
+                        );
+                    }
+
+                    if (tehsilsInView.length > 0) {
+                        currentStats.districts++;
+                        currentStats.tehsils += tehsilsInView.length;
+                        currentStats.trainers += tehsilsInView.length;
+                        currentStats.headcount += tehsilsInView.reduce((sum, t) => sum + (t.trainers[0]?.headCount || 0), 0);
+
+                        createDistrictMarker(district, selectedDistrict === district.name);
+                        populateDistrictList(district, Object.keys(allProcessedData).indexOf(district.name));
+
+                        tehsilsInView.forEach(tehsil => {
+                            if (tehsil.coords && !isNaN(tehsil.coords[0]) && !isNaN(tehsil.coords[1])) {
+                                createTehsilMarker(tehsil, district.color);
+                                bounds.push(tehsil.coords);
+                            }
+                        });
+                    }
+                });
+
+                updateOverviewPanel(selectedDistrict === 'All' ? grandTotals : currentStats);
+
+                if (selectedDistrict === 'All') {
+                    map.flyTo([27.5, 68.5], 7);
+                } else if (bounds.length > 1) {
+                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+                } else if (bounds.length === 1) {
+                    map.flyTo(bounds[0], 11);
+                } else {
+                    const firstTehsil = Object.values(allProcessedData[selectedDistrict].tehsils)[0];
+                    if (firstTehsil && firstTehsil.coords) {
+                        map.flyTo(firstTehsil.coords, 11);
+                    }
+                }
+            }
+
+            function createDistrictMarker(district, isInitiallyActive = false) {
+                const firstTehsil = Object.values(district.tehsils)[0];
+                if (!firstTehsil || !firstTehsil.coords) return;
+
+                const color = district.color;
+                const iconClass = 'fa-map-marker-alt';
+                const size = '45px';
+
+                const htmlContent = `
+                    <i class="fa-solid ${iconClass}" style="font-size: ${size}; color: ${color}; --marker-color: ${color};"></i>
+                `;
+
+                const districtIcon = L.divIcon({
+                    className: 'leaflet-marker-icon district-marker' + (isInitiallyActive ? ' active-glow' : ''),
+                    html: htmlContent,
+                    iconSize: [45, 45], iconAnchor: [22, 45]
+                });
+
+                const marker = L.marker(firstTehsil.coords, {
+                    icon: districtIcon,
+                    districtName: district.name,
+                    isDistrict: true
+                }).addTo(layers.districts);
+
+                const popupContent = `
+                    <div class="tooltip-header">
+                        <div class="district">District</div>
+                        <h3 class="name" style="color:${color};">${district.name}</h3>
+                    </div>`;
+
+                marker.bindPopup(popupContent, { className: 'custom-popup', offset: [0, -15] });
+
+                marker.on('click', function (e) {
+                    this.openPopup();
+                    highlightDistrict(district.name);
+                });
+
+                district.marker = marker;
+            }
+
+            function createTehsilMarker(tehsil, districtColor) {
+                const color = districtColor || 'var(--accent-color)';
+                const iconClass = 'fa-location-dot';
+                const size = '28px';
+
+                const htmlContent = `
+                    <i class="fa-solid ${iconClass}" style="font-size: ${size}; color: ${color};"></i>
+                    <span class="live-location-circle" style="--marker-color: ${color};"></span>
+                `;
+
+                const tehsilIcon = L.divIcon({
+                    className: 'leaflet-marker-icon tehsil-marker',
+                    html: htmlContent,
+                    iconSize: [28, 28], iconAnchor: [14, 28]
+                });
+
+                const marker = L.marker(tehsil.coords, { icon: tehsilIcon, tehsilName: tehsil.name, isDistrict: false }).addTo(layers.tehsils);
+
+                const tehsilData = allProcessedData[tehsil.district].tehsils[tehsil.name];
+                const totalHeadcount = tehsilData.trainers.reduce((sum, t) => sum + t.headCount, 0);
+
+                const popupContent = `
+                    <div class="tooltip-header">
+                        <div class="district">${tehsil.district}</div>
+                        <h3 class="name" style="color:${color};">${tehsil.name}</h3>
+                    </div>
+                    <div class="tooltip-body">
+                        <div class="district-stats">
+                            <div class="stat-block">
+                                <div class="stat-value">${tehsilData.trainers.length}</div>
+                                <div class="stat-label">Trainers</div>
+                            </div>
+                            <div class="stat-block">
+                                <div class="stat-value">${totalHeadcount.toLocaleString()}</div>
+                                <div class="stat-label">Beneficiaries</div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                marker.bindPopup(popupContent, { className: 'custom-popup', offset: [0, -15] });
+
+                marker.on('click', function (e) {
+                    this.openPopup();
+                    highlightDistrict(tehsil.district);
+                });
+            }
+
+            function highlightDistrict(districtName) {
+                document.querySelectorAll('.district-item').forEach(item => {
+                    item.classList.remove('active');
+                    item.style.removeProperty('--district-active-color');
+                });
+
+                if (activeDistrictMarker && activeDistrictMarker._icon) {
+                    activeDistrictMarker._icon.classList.remove('active-glow');
+                }
+                activeDistrictMarker = null;
+
+                const listItem = document.querySelector(`.district-item[data-district-name="${districtName}"]`);
+                if (listItem) {
+                    listItem.classList.add('active');
+                    const districtData = allProcessedData[districtName];
+                    if (districtData && districtData.color) {
+                        listItem.style.setProperty('--district-active-color', districtData.color);
+                    }
+                    listItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                const districtData = allProcessedData[districtName];
+                if (districtData && districtData.marker) {
+                    activeDistrictMarker = districtData.marker;
+                    if (activeDistrictMarker._icon) {
+                        activeDistrictMarker._icon.classList.add('active-glow');
+                        activeDistrictMarker._icon.style.setProperty('--marker-color', districtData.color);
+                    }
+                }
+
+                districtFilter.value = districtName;
+            }
+
+            function populateDistrictList(district, index) {
+                const item = document.createElement('div');
+                item.className = 'district-item';
+                item.dataset.districtName = district.name;
+                item.style.setProperty('--district-color', district.color);
+
+                const totalClassified = district.ruralCount + district.urbanCount;
+                const ruralPercent = totalClassified > 0 ? (district.ruralCount / totalClassified) * 100 : 0;
+                const urbanPercent = totalClassified > 0 ? (district.urbanCount / totalClassified) * 100 : 0;
+
+                item.innerHTML = `
+                    <div class="district-header">
+                        <div class="district-name">${district.name}</div>
+                    </div>
+                    <div class="district-stats">
+                        <div class="stat-block">
+                            <div class="stat-value">${Object.keys(district.tehsils).length}</div>
+                            <div class="stat-label">Tehsils</div>
+                        </div>
+                        <div class="stat-block">
+                            <div class="stat-value">${district.totalHeadCount.toLocaleString()}</div>
+                            <div class="stat-label">Beneficiaries</div>
+                        </div>
+                    </div>
+                    <div class="balance-bar">
+                        <div class="rural" style="width: ${ruralPercent}%" title="${ruralPercent.toFixed(1)}% Rural"></div>
+                        <div class="urban" style="width: ${urbanPercent}%" title="${urbanPercent.toFixed(1)}% Urban"></div>
+                    </div>
+                    <div class="balance-text">${ruralPercent.toFixed(0)}% Rural / ${urbanPercent.toFixed(0)}% Urban</div>
+                `;
+                item.style.animation = `fade-in-up 0.5s ${index * 0.04}s ease-out forwards`;
+
+                item.addEventListener('click', () => {
+                    highlightDistrict(district.name);
+
+                    const tehsilsInDistrict = Object.values(district.tehsils);
+                    if (tehsilsInDistrict.length > 0) {
+                        const bounds = tehsilsInDistrict.map(t => t.coords).filter(Boolean);
+                        if (bounds.length > 0) {
+                            map.fitBounds(bounds, { padding: [50, 50] });
+                        }
+                    }
+                    item.blur();
+                });
+
+                districtListContainer.appendChild(item);
+            }
+
+            // --- INITIALIZATION KICK-OFF ---
+            const success = loadData();
+            if (success) {
+                initializeDashboard();
+            }
+        });
+    </script>
+</body>
+</html>

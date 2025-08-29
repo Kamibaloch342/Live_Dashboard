@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Data Mind Map</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.6;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 40px;
+        }
+        .mind-map {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .node {
+            background-color: #3498db;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.2em;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+        .branch-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 50px;
+            position: relative;
+        }
+        .branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1; /* Ensures equal width distribution */
+            padding: 0 10px;
+            position: relative;
+        }
+        .branch-line {
+            height: 30px;
+            width: 2px;
+            background-color: #bdc3c7;
+            margin-bottom: 15px;
+        }
+        .sub-node {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            border: 1px solid #bdc3c7;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: left;
+            width: 100%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+        .sub-node h3 {
+            font-size: 1.1em;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+            color: #34495e;
+        }
+        .sub-node ul {
+            list-style-type: none;
+            padding-left: 15px;
+            margin: 0;
+            font-size: 0.9em;
+        }
+        .sub-node li {
+            margin-bottom: 5px;
+        }
+        .sub-node strong {
+            color: #3498db;
+            font-weight: 600;
+        }
+        .horizontal-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #bdc3c7;
+            margin-top: -15px; /* Adjust to connect to the vertical lines */
+        }
+        /* Media Queries for better responsiveness */
+        @media (max-width: 1024px) {
+            .branch-container {
+                flex-wrap: wrap; /* Allows branches to wrap on smaller screens */
+            }
+            .branch {
+                width: 45%;
+                margin-bottom: 20px;
+            }
+            .horizontal-line {
+                display: none; /* Hide the long horizontal line on small screens to prevent layout issues */
+            }
+        }
+        @media (max-width: 600px) {
+            .branch {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Mind Map: Unified ID Logic for Training Data</h1>
+    <div class="mind-map">
+        <div class="node">Training Session ID <br> (THE CENTRAL HUB)</div>
+        <div class="branch-container">
+            <div class="horizontal-line"></div>
+
+            <div class="branch">
+                <div class="branch-line"></div>
+                <div class="sub-node">
+                    <h3>1. Training Session Reporting Form (Trainer)</h3>
+                    <ul>
+                        <li>Purpose: Generate unique Training Session ID</li>
+                        <li><strong>Key Data:</strong> Session Details, Beneficiary Counts, Topics Covered</li>
+                        <li><strong>Automatic Captures:</strong> GPS, Audio Recording</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="branch">
+                <div class="branch-line"></div>
+                <div class="sub-node">
+                    <h3>2. Beneficiary Details Form (Data Recorder)</h3>
+                    <ul>
+                        <li>Purpose: Individual beneficiary data</li>
+                        <li><strong>Linkage:</strong> Requires **Training Session ID**</li>
+                        <li><strong>Key Data:</strong> CNIC, Pictures, Contact Info, Financial Data</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="branch">
+                <div class="branch-line"></div>
+                <div class="sub-node">
+                    <h3>3. IC Monitoring Form (IC)</h3>
+                    <ul>
+                        <li>Purpose: On-the-ground, third-party verification</li>
+                        <li><strong>Linkage:</strong> Requires **Training Session ID**</li>
+                        <li><strong>Key Data:</strong> Venue Assessment, Beneficiary Spot-Check, Trainer Rating</li>
+                        <li><strong>Automatic Captures:</strong> GPS</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="branch">
+                <div class="branch-line"></div>
+                <div class="sub-node">
+                    <h3>4. Quality Assurance (QA) Form (QA Team)</h3>
+                    <ul>
+                        <li>Purpose: Remote audit of content and delivery</li>
+                        <li><strong>Linkage:</strong> Observes a training linked by **Training Session ID**</li>
+                        <li><strong>Key Data:</strong> Concepts Covered Checklist, Observations/Notes</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="branch">
+                <div class="branch-line"></div>
+                <div class="sub-node">
+                    <h3>5. Recording Review Team Form (Audio Auditor)</h3>
+                    <ul>
+                        <li>Purpose: Audit session via audio recording</li>
+                        <li><strong>Linkage:</strong> Audits the audio file linked by **Training Session ID**</li>
+                        <li><strong>Key Data:</strong> Audio Quality, Content Review, Beneficiary Engagement</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

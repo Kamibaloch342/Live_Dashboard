@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Session Locations</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Variables for Easy Customization --- */
+        :root {
+            --bg-color: #f6f6f6cf;
+            --card-bg: rgba(255, 255, 255, 0.4); /* More transparent for prominent glass effect */
+            --border-color: rgba(255, 255, 255, 0.6);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --brand-color: #4f46e5;
+            --brand-light: #e0e7ff;
+            --shadow-light: rgba(0,0,0,0.1);
+            --shadow-heavy: rgba(0,0,0,0.2);
+        }
+
+        /* --- Base & Body Styles --- */
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            background-image: linear-gradient(175deg, var(--bg-color) 0%, #dbe7f2 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+            animation: fadeInBackground 1s ease-out forwards;
+        }
+
+        /* --- Layout Container --- */
+        .container {
+            max-width: 1280px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        /* --- Card & Glass Morphism Styles --- */
+        .card {
+            background-color: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px var(--shadow-light);
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            animation: popIn 0.8s ease-out forwards;
+        }
+
+        .card:hover {
+            box-shadow: 0 16px 40px var(--shadow-heavy);
+            transform: translateY(-10px);
+        }
+        
+        /* --- Header Styles --- */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .header-logo-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* --- Logo Styles (New) --- */
+        .header-logo-group img {
+            height: 3rem; /* Set a consistent height */
+            width: auto;
+            object-fit: contain; /* Prevent distortion and ensure logos fit */
+        }
+        
+        .header h1 {
+            font-size: 2.25rem;
+            font-weight: 900;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        /* --- Filter Styles --- */
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .filters-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .filters-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .input-group .input {
+            position: relative;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            box-sizing: border-box; /* Fixes search input overflow */
+            font-family: 'Montserrat', sans-serif; /* Ensures consistent font in inputs */
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--brand-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .input-group .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        /* New styles for date picker */
+        .date-input-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .date-input-container label,
+        .date-input-container input {
+            cursor: pointer; /* Makes the entire element clickable */
+        }
+
+        /* --- Button Styles --- */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .btn-primary {
+            background-color: var(--brand-color);
+            color: white;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.5);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: var(--text-primary);
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-secondary:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .btn-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 'Copied!' button state animation */
+        .btn.copied {
+            background-color: #22c55e;
+            color: white;
+            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.4);
+            transform: translateY(-2px) !important;
+        }
+
+        /* --- Sessions List Grid --- */
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .sessions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (min-width: 1024px) {
+            .sessions-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* --- Loading & Error States --- */
+        .loading-state, .error-state {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 4rem auto;
+        }
+
+        .loading-spinner {
+            height: 3rem;
+            width: 3rem;
+            border: 4px solid var(--brand-color);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .hidden {
+            display: none !important;
+        }
+        
+        /* --- Keyframe Animations --- */
+        @keyframes fadeInBackground {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9) translateY(40px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card header">
+            <div class="header-logo-group">
+                <img src="https://resume.brightspyre.com/affiliates/INTERACT%20Consulting/Giz%20pic-6493ec850de4e.png" alt="GIZ Logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Flag_of_Europe.svg/800px-Flag_of_Europe.svg.png" alt="EU Logo">
+            </div>
+            <h1>DFLT Session Locations</h1>
+            <div class="header-logo-group">
+                <img src="CASPEE.jpg" alt="CASPEE Logo" class="h-16 w-auto">
+                <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="filters-grid">
+                <div class="input-group full-width">
+                    <label for="search-input">Search by Trainer/IC Name</label>
+                    <div class="input">
+                        <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                        <input type="text" id="search-input" placeholder="e.g., Ana Kanwal, Asma Rubab" style="padding-left: 2.5rem;">
+                    </div>
+                </div>
+                <div class="input-group date-input-container">
+                    <label for="start-date">Start Date</label>
+                    <input type="date" id="start-date">
+                </div>
+                <div class="input-group date-input-container">
+                    <label for="end-date">End Date</label>
+                    <input type="date" id="end-date">
+                </div>
+                <div style="align-self: flex-end;">
+                    <button id="reset-filters" class="btn btn-secondary" style="width: 100%;">
+                        <i class="fa-solid fa-xmark"></i>
+                        <span>Reset Filters</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p style="font-size: 1.25rem; font-weight: 500; color: #6b7280;">Loading session data...</p>
+        </div>
+        
+        <div id="error" class="error-state hidden">
+            <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626; font-size: 3rem; margin-bottom: 1rem;"></i>
+            <h2 style="font-size: 2rem; font-weight: bold; color: #dc2626;">Data Loading Failed</h2>
+            <p style="color: #6b7280; font-size: 1.125rem; max-width: 600px; margin: 0 auto;">An error occurred while fetching the session data. Please ensure the CSV link is correct and publicly accessible, then try refreshing the page.</p>
+        </div>
+        
+        <div id="sessions-container" class="sessions-grid">
+            </div>
+    </div>
+
+    <script>
+        // Data URL for the CSV file
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTLZAsb5TVzPY9YNKLDdVGZ0X9cIeCwmKECX3gORu0OfBX8E0IiGCXB9UmPLP77o1QZXQCTRnYly68-/pub?gid=1429640923&single=true&output=csv';
+        
+        // DOM element references
+        const sessionsContainer = document.getElementById('sessions-container');
+        const loadingElement = document.getElementById('loading');
+        const errorElement = document.getElementById('error');
+        const searchInput = document.getElementById('search-input');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const resetFiltersButton = document.getElementById('reset-filters');
+        
+        // Global variable to hold all session data
+        let allSessionsData = [];
+        
+        /**
+         * A simple debounce function to prevent excessive function calls on input events.
+         * @param {function} func The function to debounce.
+         * @param {number} delay The delay in milliseconds.
+         */
+        const debounce = (func, delay) => {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        };
+
+        /**
+         * Formats a name string from 'first_last' to 'First Last'.
+         * @param {string} name - The name to format.
+         * @returns {string} The formatted name.
+         */
+        const formatName = (name) => {
+            if (!name) return 'N/A';
+            return name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        };
+
+        /**
+         * Fetches session data from the CSV and initiates rendering.
+         */
+        async function fetchAndRenderSessions() {
+            loadingElement.classList.remove('hidden');
+            errorElement.classList.add('hidden');
+            sessionsContainer.innerHTML = '';
+            
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const csvText = await response.text();
+                
+                const lines = csvText.trim().split('\n').filter(line => line.trim() !== '');
+                if (lines.length <= 1) throw new Error("No data found in the CSV. Please check the sheet content.");
+                
+                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                const sessionData = lines.slice(1).map(line => {
+                    // Use a regex to correctly handle values with commas inside quotes
+                    const values = line.match(/(?:[^,"]+|"[^"]*")+/g);
+                    const session = {};
+                    if (values) {
+                        headers.forEach((header, index) => { 
+                            session[header] = values[index] ? values[index].trim().replace(/"/g, '') : null;
+                        });
+                    }
+                    return session;
+                }).filter(session => session.session_id); // Filter out malformed rows
+
+                allSessionsData = sessionData;
+                
+                loadingElement.classList.add('hidden');
+                filterAndRenderSessions();
+
+            } catch (e) {
+                console.error('Failed to load CSV:', e);
+                loadingElement.classList.add('hidden');
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Filters the global session data based on user input and triggers rendering.
+         */
+        function filterAndRenderSessions() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+            
+            const filteredSessions = allSessionsData.filter(session => {
+                const trainer1 = formatName(session.lead_trainer_name).toLowerCase();
+                const trainer2 = session.partner_trainer_name ? formatName(session.partner_trainer_name).toLowerCase() : '';
+                const icName = (session.assigned_ic_label || session.assigned_ic_id || 'N/A').toLowerCase();
+                const submissionDate = session.SubmissionDate ? new Date(session.SubmissionDate) : null;
+
+                const trainerMatch = trainer1.includes(searchTerm) || trainer2.includes(searchTerm) || icName.includes(searchTerm);
+                
+                let dateMatch = true;
+                if (startDate && submissionDate) {
+                    dateMatch = submissionDate.setHours(0,0,0,0) >= startDate.setHours(0,0,0,0);
+                }
+                if (endDate && submissionDate) {
+                    dateMatch = dateMatch && (submissionDate.setHours(0,0,0,0) <= endDate.setHours(0,0,0,0));
+                }
+                
+                return trainerMatch && dateMatch;
+            });
+            
+            renderSessions(filteredSessions);
+        }
+
+        /**
+         * Renders the session cards to the DOM.
+         * @param {Array} sessions - The array of session objects to render.
+         */
+        function renderSessions(sessions) {
+            sessionsContainer.innerHTML = '';
+            if (sessions.length === 0) {
+                sessionsContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); font-weight: 500; margin-top: 2rem;">No sessions found matching your filters.</p>';
+                return;
+            }
+
+            sessions.forEach((session, index) => {
+                const coordinatesString = session.session_location ? session.session_location.split(' ').slice(0, 2).join(',') : null;
+                const googleMapsUrl = coordinatesString ? `https://www.google.com/maps/search/?api=1&query=${coordinatesString}` : '#';
+                const hasLocation = !!coordinatesString;
+
+                const trainer1 = formatName(session.lead_trainer_name);
+                const trainer2 = session.partner_trainer_name ? formatName(session.partner_trainer_name) : null;
+                const trainerText = trainer2 ? `${trainer1} & ${trainer2}` : trainer1;
+                
+                // Use assigned_ic_label with a fallback
+                const icName = session.assigned_ic_label || session.assigned_ic_id || 'N/A';
+
+                const submissionDate = session.SubmissionDate ? new Date(session.SubmissionDate) : null;
+                const formattedDate = submissionDate && !isNaN(submissionDate) ? new Intl.DateTimeFormat('en-US', { dateStyle: 'long' }).format(submissionDate) : 'N/A';
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.animationDelay = `${index * 0.08}s`;
+                card.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Trainers:</span>
+                            <p style="font-size: 1rem; font-weight: bold; color: var(--text-primary);">${trainerText} <span style="font-size: 0.875rem; color: var(--brand-color); font-style: italic;">${trainer2 ? '(in pairs)' : ''}</span></p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Session ID:</span>
+                            <p style="font-size: 1.125rem; color: var(--text-primary); word-break: break-all;">${session.session_id || 'N/A'}</p>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Location:</span>
+                                <p style="font-size: 0.875rem; color: var(--text-primary); font-weight: 500;">${session.province_select || 'N/A'} - ${session.district_select || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">IC:</span>
+                                <p style="font-size: 0.875rem; color: var(--text-primary); font-weight: 500;">${icName}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Submission Date:</span>
+                            <p style="font-size: 0.875rem; color: var(--text-primary); font-weight: 500;">${formattedDate}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%; margin-top: 1.5rem;">
+                        <a href="${googleMapsUrl}" target="_blank" class="btn btn-primary ${!hasLocation ? 'btn-disabled' : ''}" ${!hasLocation ? 'aria-disabled="true"' : ''}>
+                            <i class="fa-solid fa-map-pin"></i>
+                            <span>View on Map</span>
+                        </a>
+                        <button class="btn btn-secondary ${!hasLocation ? 'btn-disabled' : ''}" onclick="copyToClipboard('${coordinatesString}', this)">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>Copy Google Maps Location</span>
+                        </button>
+                    </div>
+                `;
+                sessionsContainer.appendChild(card);
+            });
+        }
+        
+        /**
+         * Copies text to the clipboard using the modern Clipboard API.
+         * @param {string} text - The text to copy.
+         * @param {HTMLElement} button - The button element that was clicked.
+         */
+        async function copyToClipboard(text, button) {
+            if (!text || button.classList.contains('btn-disabled')) return;
+            
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalText = button.querySelector('span').textContent;
+                const originalIcon = button.querySelector('i').className;
+                
+                button.classList.add('copied');
+                button.innerHTML = `<i class="fa-solid fa-check"></i><span>Copied!</span>`;
+                
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = `<i class="${originalIcon}"></i><span>${originalText}</span>`;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text:', err);
+                // Fallback for older browsers or restricted environments
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+        }
+        
+        // Event listeners for filters with debounce on search input
+        const debouncedFilter = debounce(filterAndRenderSessions, 300);
+        searchInput.addEventListener('input', debouncedFilter);
+        startDateInput.addEventListener('change', filterAndRenderSessions);
+        endDateInput.addEventListener('change', filterAndRenderSessions);
+        
+        resetFiltersButton.addEventListener('click', () => {
+            searchInput.value = '';
+            startDateInput.value = '';
+            endDateInput.value = '';
+            filterAndRenderSessions();
+        });
+
+        // Expose copyToClipboard to the global scope for the onclick attribute
+        window.copyToClipboard = copyToClipboard;
+
+        // Fetch data on page load
+        document.addEventListener('DOMContentLoaded', fetchAndRenderSessions);
+    </script>
+</body>
+</html>

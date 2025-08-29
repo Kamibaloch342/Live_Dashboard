@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Phase 2 - Hiring Dashboard</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --font-family: 'Montserrat', sans-serif;
+            --bg-color: #F3F4F6;
+            --text-color: #1F2937;
+            --text-muted: #6B7280;
+            --accent-color: #4F46E5;
+            --danger-color: #EF4444;
+            --danger-bg: #fee2e2;
+            --success-color: #22C55E;
+            --success-bg: #dcfce7;
+            --warning-color: #F59E0B;
+            --sidebar-bg: rgba(255, 255, 255, 0.6);
+            --tooltip-bg: rgba(255, 255, 255, 0.9);
+            --item-bg: rgba(255, 255, 255, 0.4);
+            --item-hover-bg: rgba(255, 255, 255, 0.8);
+            --border-color: rgba(229, 231, 235, 1);
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --blur-intensity: 12px;
+        }
+
+        body.dark-mode {
+            --bg-color: #111827;
+            --text-color: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --accent-color: #6366F1;
+            --danger-color: #F87171;
+            --danger-bg: #450a0a;
+            --success-color: #4ADE80;
+            --success-bg: #14532d;
+            --warning-color: #FBBF24;
+            --sidebar-bg: rgba(29, 41, 59, 0.55);
+            --tooltip-bg: rgba(29, 41, 59, 0.85);
+            --item-bg: rgba(55, 65, 81, 0.4);
+            --item-hover-bg: rgba(55, 65, 81, 0.8);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --shadow-color: rgba(0, 0, 0, 0.25);
+        }
+
+        html, body {
+            height: 100%; margin: 0; padding: 0;
+            font-family: var(--font-family); color: var(--text-color);
+            overflow: hidden; background-color: var(--bg-color);
+            transition: background-color 0.5s ease;
+        }
+
+        body::before {
+            content: ''; position: absolute; width: 200%; height: 200%;
+            top: -50%; left: -50%; z-index: -1;
+            background: linear-gradient(45deg, rgba(79, 70, 229, 0.1), rgba(99, 102, 241, 0.08), rgba(34, 197, 94, 0.1), rgba(245, 158, 11, 0.1));
+            animation: gradient-pan 25s ease infinite;
+        }
+        body.dark-mode::before {
+            background: linear-gradient(45deg, rgba(79, 70, 229, 0.15), rgba(99, 102, 241, 0.1), rgba(74, 222, 128, 0.15), rgba(251, 191, 36, 0.1));
+        }
+
+        .dashboard-container { position: relative; height: 100vh; width: 100vw; animation: fade-in 0.8s ease; }
+        #map-container { position: absolute; top: 0; left: 0; height: 100%; width: 100%; }
+        #map { width: 100%; height: 100%; background: transparent; }
+        .leaflet-tile-pane { transition: filter 0.5s ease; }
+        .dark-mode .leaflet-tile-pane { filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7); }
+
+        #sidebar {
+            position: absolute; top: 20px; left: 20px; bottom: 20px; width: 380px; z-index: 1001;
+            background: var(--sidebar-bg); backdrop-filter: blur(var(--blur-intensity));
+            -webkit-backdrop-filter: blur(var(--blur-intensity));
+            border: 1px solid var(--border-color); border-radius: 24px;
+            box-shadow: 0 8px 32px 0 var(--shadow-color);
+            padding: 25px; display: flex; flex-direction: column; transition: all 0.3s ease;
+        }
+        .sidebar-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;
+        }
+        .sidebar-header h1 { font-size: 28px; font-weight: 800; margin: 0 0 5px 0; color: var(--accent-color); letter-spacing: -1px; }
+        .sidebar-header .subtitle { font-size: 14px; color: var(--text-muted); margin: 0; }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        #theme-toggle, #layer-toggle {
+            background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); cursor: pointer;
+            padding: 8px 10px; border-radius: 12px; font-size: 16px; transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        #theme-toggle:hover, #layer-toggle:hover { 
+            background: var(--item-hover-bg); 
+            color: var(--text-color); 
+            transform: scale(1.05);
+        }
+        #theme-toggle:hover { transform: scale(1.05) rotate(15deg); }
+        #theme-toggle i, #layer-toggle i { transition: transform 0.4s ease; }
+
+        .sidebar-section-header { font-size: 16px; font-weight: 600; margin: 15px 0 15px 0; color: var(--text-color); }
+        .sidebar-section-header i { margin-right: 8px; color: var(--text-muted); }
+
+        #overview-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; background: var(--item-bg); border-radius: 14px; }
+        .overview-stat { text-align: center; }
+        .overview-stat-value { font-size: 24px; font-weight: 800; color: var(--accent-color); }
+        .overview-stat-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); }
+
+        .sidebar-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .filter-group label { font-weight: 600; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: block; text-transform: uppercase;}
+        .filter-group select {
+            width: 100%; padding: 10px; border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--item-bg); color: var(--text-color);
+            font-family: var(--font-family); font-size: 14px;
+            -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%239ca3af' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 16px;
+            cursor: pointer;
+        }
+
+        #station-list-container { flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; }
+        #station-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 10px; margin-right: -10px; }
+        #station-list::-webkit-scrollbar { width: 5px; }
+        #station-list::-webkit-scrollbar-track { background: transparent; }
+        #station-list::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
+
+        .station-item {
+            padding: 12px 15px; border-radius: 14px; cursor: pointer;
+            margin-bottom: 10px; border: 1px solid transparent; background-color: var(--item-bg);
+            transition: all 0.25s ease; opacity: 0;
+            display: flex; align-items: center; gap: 15px;
+        }
+        .station-item:hover { background-color: var(--item-hover-bg); transform: scale(1.02); border-color: var(--border-color); }
+        .station-item.active { background-color: var(--accent-color); color: white; transform: scale(1.03); box-shadow: 0 4px 15px -2px var(--accent-color); }
+        .station-item.active .station-name, .station-item.active .station-details { color: white; }
+        
+        .station-status-icon { font-size: 20px; flex-shrink: 0; width: 20px; text-align: center; }
+        .station-info { flex-grow: 1; }
+        .station-name { font-weight: 700; font-size: 16px; }
+        .station-details { font-size: 12px; color: var(--text-muted); }
+
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: var(--tooltip-bg);
+            backdrop-filter: blur(var(--blur-intensity));
+            -webkit-backdrop-filter: blur(var(--blur-intensity));
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px 0 var(--shadow-color);
+            border-radius: 16px;
+            padding: 0;
+            width: 350px;
+        }
+        .custom-popup .leaflet-popup-content {
+            font-family: var(--font-family);
+            margin: 0;
+            animation: fade-in-scale 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+        }
+        .custom-popup .leaflet-popup-tip { background: var(--tooltip-bg); }
+
+        .tooltip-header { padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
+        .tooltip-header .district { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+        .tooltip-header .name { font-size: 22px; font-weight: 800; margin: 2px 0 0 0; }
+        .tooltip-body { padding: 15px 20px; }
+        .tooltip-body h4 { font-size: 13px; margin: 15px 0 10px 0; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
+        
+        .tooltip-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .tooltip-table th, .tooltip-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .tooltip-table th { font-weight: 600; color: var(--text-muted); font-size: 12px; }
+        .tooltip-table td { font-weight: 500; }
+        .tooltip-table tr:last-child td { border-bottom: none; }
+
+        .applicant-table-container { 
+            /* max-height: 200px; */
+            /* overflow-y: auto; */
+         }
+        .applicant-score { font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+        .applicant-score.qualified { color: var(--success-color); background-color: var(--success-bg); }
+        .applicant-score.not-qualified { color: var(--danger-color); background-color: var(--danger-bg); }
+
+        .leaflet-marker-icon {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease-in-out;
+            position: relative;
+        }
+        .leaflet-marker-icon:hover { transform: scale(1.2); }
+        .marker-badge {
+            position: absolute; top: -8px; right: -8px;
+            background-color: var(--bg-color); color: var(--text-color);
+            border-radius: 50%; width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in-scale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <div>
+                    <h1>Hiring Dashboard</h1>
+                    <p class="subtitle">DFLT Phase 2</p>
+                </div>
+                <div class="header-actions">
+                    <button id="layer-toggle" title="Toggle Satellite View"><i class="fa-solid fa-globe"></i></button>
+                    <button id="theme-toggle" title="Toggle Dark Mode"><i class="fa-solid fa-moon"></i></button>
+                </div>
+            </div>
+            
+            <div class="sidebar-section-header"><i class="fa-solid fa-chart-pie"></i>Overview</div>
+            <div id="overview-stats"></div>
+
+            <div class="sidebar-filters">
+                <div class="filter-group">
+                    <label for="province-filter">Province</label>
+                    <select id="province-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="district-filter">District</label>
+                    <select id="district-filter"></select>
+                </div>
+            </div>
+
+            <div id="station-list-container">
+                <div class="sidebar-section-header"><i class="fa-solid fa-map-location-dot"></i>Duty Stations</div>
+                <div id="station-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- HARDCODED DATA ---
+        const hiringPlan = [
+            { province: "KPK", district: "Abbottabad", station: "Havelian", ruralUrban: "Rural", lat: 34.0536, lon: 73.1594, headCount: 1222, consideration: 1 },
+            { province: "KPK", district: "Abbottabad", station: "Abbottabad", ruralUrban: "Urban", lat: 34.1493, lon: 73.2185, headCount: 5285, consideration: 2 },
+            { province: "KPK", district: "Haripur", station: "Haripur", ruralUrban: "Urban", lat: 33.9942, lon: 72.9333, headCount: 1667, consideration: 1 },
+            { province: "PUNJAB", district: "Attock", station: "Fateh Jang", ruralUrban: "Rural", lat: 33.5671, lon: 72.6423, headCount: 1355, consideration: 1 },
+            { province: "PUNJAB", district: "Attock", station: "Attock", ruralUrban: "Urban", lat: 33.7695, lon: 72.3610, headCount: 1848, consideration: 1 },
+            { province: "PUNJAB", district: "Chakwal", station: "Choa Saidan Shah", ruralUrban: "Rural", lat: 32.7207, lon: 72.9856, headCount: 762, consideration: 1 },
+            { province: "PUNJAB", district: "Chakwal", station: "Chakwal", ruralUrban: "Urban", lat: 32.9328, lon: 72.8629, headCount: 1689, consideration: 1 },
+            { province: "PUNJAB", district: "Rawalpindi", station: "Rawalpindi", ruralUrban: "Urban", lat: 33.5915, lon: 73.0537, headCount: 3941, consideration: 2 }
+        ];
+
+        const applicantsData = [
+            { name: "Sabira Arif", cnic: "6110169944732", province: "Islamabad", district: "Islamabad", station: "Islamabad", score: 52.61 },
+            { name: "Nosha Asta Parveen", cnic: "3230290700418", province: "Islamabad", district: "Islamabad", station: "Islamabad", score: 35.15 },
+            { name: "Amna Shakir Abbasi", cnic: "6110192692646", province: "Islamabad", district: "Islamabad", station: "Islamabad", score: 50.70 },
+            { name: "Rubina Ansari", cnic: "3830285319406", province: "Islamabad", district: "Islamabad", station: "Islamabad", score: 59.75 },
+            { name: "Mirza Asad Habib Baig", cnic: "3650235538407", province: "Islamabad", district: "Islamabad", station: "Islamabad", score: 61.74 },
+            { name: "Sadaf Ishfaq", cnic: "1110110942466", province: "Islamabad", district: "Islamabad", station: "Islamabad", score: 66.41 },
+            { name: "Farzana Kaukab", cnic: "1310108194522", province: "KPK", district: "Abbottabad", station: "Abbottabad", score: 53.26 },
+            { name: "Donia Gul", cnic: "1310186624402", province: "KPK", district: "Abbottabad", station: "Abbottabad", score: 49.84 },
+            { name: "Fozia Bashir", cnic: "1310108226664", province: "KPK", district: "Abbottabad", station: "Abbottabad", score: 53.76 },
+            { name: "Wajiha Shafqat", cnic: "1310103852110", province: "KPK", district: "Abbottabad", station: "Lora", score: 57.13 },
+            { name: "Fatima Noor", cnic: "1330269379852", province: "KPK", district: "Abbottabad", station: "Havelian", score: 71.94 },
+            { name: "Kinza Rani", cnic: "1310122922948", province: "KPK", district: "Abbottabad", station: "Abbottabad", score: 27.47 },
+            { name: "Sadaf Younus", cnic: "1310148997266", province: "KPK", district: "Abbottabad", station: "Abbottabad", score: 33.15 },
+            { name: "Asima Bibi", cnic: "1330286867502", province: "KPK", district: "Haripur", station: "Haripur", score: 33.25 },
+            { name: "Safina", cnic: "1720148974460", province: "KPK", district: "Haripur", station: "Ghazi", score: 55.56 },
+            { name: "Nazia Sajjad", cnic: "3710173440460", province: "Punjab", district: "Attock", station: "Attock", score: 28.69 },
+            { name: "Shehla Aqil", cnic: "3710371372898", province: "Punjab", district: "Attock", station: "Fateh Jang", score: 62.13 },
+            { name: "Fozia Iqbal", cnic: "3710211969872", province: "Punjab", district: "Attock", station: "Fateh Jang", score: 47.41 },
+            { name: "Ali Arshad", cnic: "6110125272175", province: "Punjab", district: "Attock", station: "Attock", score: 37.94 },
+            { name: "Sarwat Fatima", cnic: "3710573245330", province: "Punjab", district: "Attock", station: "Phindi Gheb", score: 66.34 },
+            { name: "Tania Bibi", cnic: "3710480245762", province: "Punjab", district: "Attock", station: "Jhand", score: 57.43 },
+            { name: "Tamseela Bibi", cnic: "3720151038062", province: "Punjab", district: "Chakwal", station: "Kallar", score: 32.87 },
+            { name: "Shanza Komal", cnic: "3730405800538", province: "Punjab", district: "Chakwal", station: "Chakwal", score: 52.43 },
+            { name: "Anam Fatima", cnic: "3720235162260", province: "Punjab", district: "Chakwal", station: "Choa Saidan Shah", score: 59.04 },
+            { name: "Shazia Naseer", cnic: "3740533617246", province: "Punjab", district: "Rawalpindi", station: "Rawalpindi", score: 27.66 },
+            { name: "Nosheen Akhtar", cnic: "3740173961166", province: "Punjab", district: "Rawalpindi", station: "Gujar Khan", score: 51.86 },
+            { name: "Rubina Kousar", cnic: "8230202367452", province: "Punjab", district: "Rawalpindi", station: "Rawalpindi", score: 30.25 },
+            { name: "Eman Ifhtikhar", cnic: "3740508179266", province: "Punjab", district: "Rawalpindi", station: "Rawalpindi", score: 35.05 },
+            { name: "Sahiba Mushtaq", cnic: "8230383995596", province: "Punjab", district: "Rawalpindi", station: "Rawalpindi", score: 55.02 },
+            { name: "Munawar Shan", cnic: "3740579355661", province: "Punjab", district: "Rawalpindi", station: "Rawalpindi", score: 60.23 },
+            { name: "Faiza Batool", cnic: "3740706262472", province: "Punjab", district: "Rawalpindi", station: "Kallarsaydan", score: 60.72 },
+            { name: "Muhammad Jamal", cnic: "3740568578279", province: "Punjab", district: "Rawalpindi", station: "Rawalpindi", score: 24.85 },
+            { name: "Khawar Hussain", cnic: "3730128581111", province: "Punjab", district: "Rawalpindi", station: "Rawalpindi", score: 29.49 },
+            { name: "Noshaba Jahangir", cnic: "3740554362366", province: "Punjab", district: "Rawalpindi", station: "Rawalpindi", score: 30.62 },
+            { name: "Aneela Kanwal", cnic: "3740668595104", province: "Punjab", district: "Rawalpindi", station: "Taxila", score: 73.18 }
+        ];
+
+        // --- MAP INITIALIZATION ---
+        const map = L.map('map', { center: [30.3753, 69.3451], zoom: 6, zoomControl: false });
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // --- TILE LAYERS ---
+        const baseLayers = {
+            voyager: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            })
+        };
+        baseLayers.voyager.addTo(map); // Add default layer
+
+        // --- DOM ELEMENT REFERENCES ---
+        const provinceFilter = document.getElementById('province-filter');
+        const districtFilter = document.getElementById('district-filter');
+        const stationListContainer = document.getElementById('station-list');
+        const overviewStatsContainer = document.getElementById('overview-stats');
+        const stationLayer = L.layerGroup().addTo(map);
+        const layerToggle = document.getElementById('layer-toggle');
+        
+        let processedData = [];
+
+        // --- DATA PROCESSING ---
+        function processData() {
+            processedData = hiringPlan.map(station => {
+                const stationApplicants = applicantsData.filter(app => 
+                    app.district.toLowerCase() === station.district.toLowerCase() && 
+                    app.station.toLowerCase() === station.station.toLowerCase()
+                );
+                
+                const qualifiedApplicants = stationApplicants.filter(app => app.score >= 40);
+                
+                let status = 'RED'; // Need applicants
+                if (qualifiedApplicants.length > 0) {
+                    status = qualifiedApplicants.length >= station.consideration ? 'GREEN' : 'YELLOW'; // Green = Filled, Yellow = Partially filled
+                }
+
+                return {
+                    ...station,
+                    applicants: stationApplicants.sort((a, b) => b.score - a.score),
+                    qualifiedCount: qualifiedApplicants.length,
+                    status: status
+                };
+            });
+            console.log("✅ Data processed successfully");
+        }
+
+        // --- UI & MAP RENDERING ---
+        function initializeDashboard() {
+            populateFilters();
+            addEventListeners();
+            updateDisplay();
+        }
+
+        function populateFilters() {
+            const provinces = ['All', ...new Set(processedData.map(d => d.province))].sort();
+            provinceFilter.innerHTML = provinces.map(p => `<option value="${p}">${p}</option>`).join('');
+            updateDistrictFilter();
+        }
+        
+        function updateDistrictFilter(selectedProvince = 'All') {
+            const currentDistrict = districtFilter.value;
+            let eligibleDistricts = [];
+
+            if (selectedProvince === 'All') {
+                eligibleDistricts = [...new Set(processedData.map(d => d.district))].sort();
+            } else {
+                eligibleDistricts = [...new Set(processedData.filter(d => d.province === selectedProvince).map(d => d.district))].sort();
+            }
+
+            const districtOptions = ['All', ...eligibleDistricts];
+            districtFilter.innerHTML = districtOptions.map(d => `<option value="${d}">${d}</option>`).join('');
+            
+            if (districtOptions.includes(currentDistrict)) {
+                districtFilter.value = currentDistrict;
+            } else {
+                districtFilter.value = 'All';
+            }
+        }
+
+        function addEventListeners() {
+            provinceFilter.addEventListener('change', () => {
+                updateDistrictFilter(provinceFilter.value);
+                districtFilter.value = 'All';
+                updateDisplay();
+            });
+            districtFilter.addEventListener('change', updateDisplay);
+
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const icon = document.querySelector('#theme-toggle i');
+                icon.classList.toggle('fa-moon', !document.body.classList.contains('dark-mode'));
+                icon.classList.toggle('fa-sun', document.body.classList.contains('dark-mode'));
+            });
+
+            layerToggle.addEventListener('click', () => {
+                const icon = layerToggle.querySelector('i');
+                if (map.hasLayer(baseLayers.satellite)) {
+                    map.removeLayer(baseLayers.satellite);
+                    map.addLayer(baseLayers.voyager);
+                    icon.className = 'fa-solid fa-globe';
+                    layerToggle.title = 'Toggle Satellite View';
+                } else {
+                    map.removeLayer(baseLayers.voyager);
+                    map.addLayer(baseLayers.satellite);
+                    icon.className = 'fa-solid fa-map';
+                    layerToggle.title = 'Toggle Default View';
+                }
+            });
+        }
+
+        function updateOverviewPanel(stations) {
+            const stats = {
+                stations: stations.length,
+                positions: stations.reduce((sum, s) => sum + s.consideration, 0),
+                applicants: stations.reduce((sum, s) => sum + s.applicants.length, 0),
+                qualified: stations.reduce((sum, s) => sum + s.qualifiedCount, 0)
+            };
+            overviewStatsContainer.innerHTML = `
+                <div class="overview-stat">
+                    <div class="overview-stat-value">${stats.stations.toLocaleString()}</div>
+                    <div class="overview-stat-label">Stations</div>
+                </div>
+                <div class="overview-stat">
+                    <div class="overview-stat-value">${stats.positions.toLocaleString()}</div>
+                    <div class="overview-stat-label">Positions</div>
+                </div>
+                <div class="overview-stat">
+                    <div class="overview-stat-value">${stats.applicants.toLocaleString()}</div>
+                    <div class="overview-stat-label">Applicants</div>
+                </div>
+                <div class="overview-stat">
+                    <div class="overview-stat-value">${stats.qualified.toLocaleString()}</div>
+                    <div class="overview-stat-label">Qualified</div>
+                </div>
+            `;
+        }
+
+        function updateDisplay() {
+            stationLayer.clearLayers();
+            stationListContainer.innerHTML = '';
+
+            const selectedProvince = provinceFilter.value;
+            const selectedDistrict = districtFilter.value;
+
+            const stationsToDisplay = processedData.filter(station =>
+                (selectedProvince === 'All' || station.province === selectedProvince) &&
+                (selectedDistrict === 'All' || station.district === selectedDistrict)
+            );
+
+            const bounds = [];
+            stationsToDisplay.forEach((station, index) => {
+                if (station.lat && station.lon) {
+                    createStationMarker(station);
+                    bounds.push([station.lat, station.lon]);
+                }
+                populateStationList(station, index);
+            });
+
+            updateOverviewPanel(stationsToDisplay);
+
+            if (bounds.length > 1) {
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+            } else if (bounds.length === 1) {
+                map.flyTo(bounds[0], 11);
+            } else {
+                map.flyTo([30.3753, 69.3451], 6);
+            }
+        }
+
+        function createStationMarker(station) {
+            let color = 'var(--accent-color)';
+            if (station.status === 'GREEN') color = 'var(--success-color)';
+            else if (station.status === 'YELLOW') color = 'var(--warning-color)';
+            else if (station.status === 'RED') color = 'var(--danger-color)';
+
+            const iconHtml = `
+                <i class="fa-solid ${station.ruralUrban === 'Rural' ? 'fa-mountain-sun' : 'fa-city'}" style="font-size: 28px; color: ${color};"></i>
+                <div class="marker-badge">${station.consideration}</div>
+            `;
+            
+            const stationIcon = L.divIcon({
+                className: 'leaflet-marker-icon',
+                html: iconHtml,
+                iconSize: [32, 32], iconAnchor: [16, 32]
+            });
+            const marker = L.marker([station.lat, station.lon], { icon: stationIcon, stationName: station.station }).addTo(stationLayer);
+
+            marker.bindPopup(() => createPopupContent(station), { className: 'custom-popup', offset: [15, -20] });
+
+            marker.on('click', function (e) {
+                document.querySelectorAll('.station-item').forEach(item => {
+                    const isActive = item.dataset.stationName === station.station && item.dataset.districtName === station.district;
+                    item.classList.toggle('active', isActive);
+                    if (isActive) {
+                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
+        }
+
+        function createPopupContent(station) {
+            const applicantRows = station.applicants.map(app => `
+                <tr>
+                    <td>${app.name}</td>
+                    <td>${app.cnic}</td>
+                    <td>
+                        <span class="applicant-score ${app.score >= 40 ? 'qualified' : 'not-qualified'}">
+                            ${app.score.toFixed(2)}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="tooltip-header">
+                    <div class="district">${station.district} / ${station.ruralUrban}</div>
+                    <h3 class="name" style="color:${station.status === 'GREEN' ? 'var(--success-color)' : station.status === 'YELLOW' ? 'var(--warning-color)' : 'var(--danger-color)'};">${station.station}</h3>
+                </div>
+                <div class="tooltip-body">
+                    <h4>Hiring Status</h4>
+                    <table class="tooltip-table">
+                        <tr><th>Positions</th><td>${station.consideration}</td></tr>
+                        <tr><th>Total Applicants</th><td>${station.applicants.length}</td></tr>
+                        <tr><th>Qualified (40+)</th><td>${station.qualifiedCount}</td></tr>
+                        <tr><th>WeT Beneficiaries</th><td>${station.headCount.toLocaleString()}</td></tr>
+                    </table>
+
+                    <h4>Applicants (${station.applicants.length})</h4>
+                    <div class="applicant-table-container">
+                        <table class="tooltip-table">
+                            <thead><tr><th>Name</th><th>CNIC</th><th>Score</th></tr></thead>
+                            <tbody>${applicantRows || '<tr><td colspan="3">No applicants found.</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }
+
+
+        function populateStationList(station, index) {
+            const item = document.createElement('div');
+            item.className = 'station-item';
+            item.dataset.stationName = station.station;
+            item.dataset.districtName = station.district;
+            
+            let statusIcon = 'fa-circle-question';
+            let statusColor = 'var(--text-muted)';
+            if (station.status === 'GREEN') { statusIcon = 'fa-circle-check'; statusColor = 'var(--success-color)'; }
+            else if (station.status === 'YELLOW') { statusIcon = 'fa-triangle-exclamation'; statusColor = 'var(--warning-color)'; }
+            else if (station.status === 'RED') { statusIcon = 'fa-circle-xmark'; statusColor = 'var(--danger-color)'; }
+            
+            item.innerHTML = `
+                <div class="station-status-icon" style="color: ${statusColor};"><i class="fa-solid ${statusIcon}"></i></div>
+                <div class="station-info">
+                    <div class="station-name">${station.station}</div>
+                    <div class="station-details">${station.district} &bull; ${station.qualifiedCount}/${station.consideration} Qualified</div>
+                </div>
+            `;
+            item.style.animation = `fade-in-up 0.5s ${index * 0.04}s ease-out forwards`;
+            
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.station-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                map.flyTo([station.lat, station.lon], 13);
+                
+                // Find and open the corresponding marker's popup
+                stationLayer.eachLayer(layer => {
+                    if (layer.options.stationName === station.station) {
+                        layer.openPopup();
+                    }
+                });
+                item.blur();
+            });
+
+            stationListContainer.appendChild(item);
+        }
+        
+        // --- INITIALIZATION KICK-OFF ---
+        processData();
+        initializeDashboard();
+    });
+    </script>
+</body>
+</html>

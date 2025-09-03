@@ -556,7 +556,7 @@
                         <span class="ml-3">DFLT Trainer's Mapping</span>
                     </a>
                 </li>
-                 
+                
                 
                 
                 
@@ -571,7 +571,7 @@
 
 
 
-                 <li>
+                <li>
                     <a href="SSPA_Districts_Mapping.html" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100">
                          <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                         <span class="ml-3">SSPA Districts Mapping</span>
@@ -617,6 +617,7 @@
                 <div class="logos-container">
                     <img src="https://resume.brightspyre.com/affiliates/INTERACT%20Consulting/Giz%20pic-6493ec850de4e.png" alt="GIZ Logo" class="welcome-logo h-16">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Flag_of_Europe.svg/800px-Flag_of_Europe.svg.png" alt="EU Logo" class="welcome-logo h-16">
+                    <img src="https://sspa.gos.pk/wp-content/uploads/2023/07/sspalogo-1.png" alt="SSPA Logo" class="welcome-logo h-16">
                     <img src="CASPEE.jpg" alt="CASPEE Logo" class="welcome-logo h-16">
                     <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="welcome-logo h-16">
                 </div>
@@ -660,6 +661,7 @@
                 </div>
 
                 <div class="flex items-center gap-4">
+                    <img src="https://sspa.gos.pk/wp-content/uploads/2023/07/sspalogo-1.png" alt="SSPA Logo" class="h-16 w-auto">
                     <img src="CASPEE.jpg" alt="CASPEE Logo" class="h-16 w-auto">
                     <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-16 w-auto">
                 </div>
@@ -1198,8 +1200,8 @@
                     const pinColor = provinceColors[provinceNameMap[item.Province] || item.Province] || '#4f46e5';
                     const markerIcon = L.divIcon({
                         html: `<svg class="map-pin" width="${markerSize}" height="${markerSize}" viewBox="0 0 24 24" fill="${pinColor}" xmlns="http://www.w3.org/2000/svg">
-                                     <path d="M12 0C7.589 0 4 3.589 4 8c0 4.411 8 16 8 16s8-11.589 8-16c0-4.411-3.589-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
-                                   </svg>`,
+                                       <path d="M12 0C7.589 0 4 3.589 4 8c0 4.411 8 16 8 16s8-11.589 8-16c0-4.411-3.589-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
+                                     </svg>`,
                         className: '',
                         iconSize: [markerSize, markerSize],
                         iconAnchor: [markerSize / 2, markerSize]
@@ -1431,13 +1433,16 @@
 
             function startWelcomeAnimation(isFirstLogin = true) {
                 welcomeOverlay.style.display = 'flex';
-                // Define text parts for typewriter
+                // MODIFICATION START: Added SSPA to the typewriter animation
                 const titleParts = [
                     { text: 'DFLT Dashboard | ' },
                     { text: 'GIZ', class: 'text-red-600' },
+                    { text: ', ' },
+                    { text: 'SDPI', class: 'text-blue-600' },
                     { text: ' & ' },
-                    { text: 'SDPI', class: 'text-blue-600' }
+                    { text: 'SSPA', class: 'text-green-600' }
                 ];
+                // MODIFICATION END
                 setTimeout(() => typewriterEffect(document.getElementById('welcome-title'), titleParts, 2000), 1500);
 
                 const welcomeScreenDuration = isFirstLogin ? 5000 : 4000;

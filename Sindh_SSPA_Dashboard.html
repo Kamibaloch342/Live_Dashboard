@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Phase 2 Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom CSS Variables for easy theme management */
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --brand-color: #4f46e5;
+            --brand-light: #e0e7ff;
+            --gradient-start: #f8fafc;
+            --gradient-end: #eef2f5;
+        }
+
+        /* Base styles for body and font */
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            background-image: linear-gradient(175deg, var(--bg-color) 0%, #dbe7f2 100%);
+            color: var(--text-primary);
+            overflow: auto;
+            min-height: 100vh;
+        }
+        
+        /* ======================================= */
+        /* == NEW SIDEBAR & PAGE CONTAINER STYLES == */
+        /* ======================================= */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%); /* Initially hidden off-screen */
+        }
+        
+        #sidebar-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #page-container {
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        /* When the sidebar is open... */
+        body.sidebar-open #sidebar {
+            transform: translateX(0); /* Slide it in */
+        }
+
+        body.sidebar-open #sidebar-overlay {
+            display: block;
+        }
+
+        /* On desktop, push the main content to the side */
+        @media (min-width: 1024px) {
+            body.sidebar-open #page-container {
+                margin-left: 16rem; /* 256px, same as sidebar width */
+            }
+        }
+
+        /* Main dashboard grid layout using CSS Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: 70px repeat(10, minmax(0, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            height: 100vh;
+        }
+
+        /* Styling for all dashboard cards with animations and shadows */
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease-out forwards;
+            color: var(--text-primary);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            min-height: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card:hover {
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            transform: translateY(-5px);
+        }
+
+        /* General font styles */
+        h1, h2, h3, h4, p, span, div, label, select, button, table, th, td {
+            font-family: 'Montserrat', sans-serif !important;
+            color: var(--text-primary);
+        }
+        .text-gray-400 { color: var(--text-secondary) !important; }
+        .text-gray-600 { color: #64748b !important; }
+        .text-indigo-600 { color: var(--brand-color) !important; }
+
+        /* Keyframe animation for general fade-in effect */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ======================================= */
+        /* == NEW WELCOME SCREEN & ANIMATIONS == */
+        /* ======================================= */
+        .welcome-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            /* MODIFICATION: Cleaner, lighter background */
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2f5 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .welcome-box {
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 2rem;
+            padding: 3rem 4rem;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            transform: scale(0.5);
+            opacity: 0;
+            animation: popIn 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s forwards;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        @keyframes popIn {
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .logos-container {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .welcome-logo {
+            height: 4rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUpFadeIn 0.8s ease-out forwards;
+        }
+        /* Staggered animation for logos */
+        .welcome-logo:nth-child(1) { animation-delay: 0.8s; }
+        .welcome-logo:nth-child(2) { animation-delay: 1.0s; }
+        .welcome-logo:nth-child(3) { animation-delay: 1.2s; }
+        .welcome-logo:nth-child(4) { animation-delay: 1.4s; }
+
+        .welcome-subtitle {
+            font-size: 2.5rem;
+            font-weight: 800;
+            min-height: 4rem; /* Reserve space for text to avoid layout shift */
+        }
+        /* Typing cursor effect */
+        .welcome-subtitle .cursor {
+            display: inline-block;
+            background-color: var(--text-primary);
+            width: 3px;
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            from, to { background-color: transparent; }
+            50% { background-color: var(--text-primary); }
+        }
+        
+        .welcome-dev-text {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            opacity: 0;
+            animation: slideUpFadeIn 0.8s ease-out 3.5s forwards; /* Delay until after typing */
+        }
+
+        @keyframes slideUpFadeIn {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+
+        /* Grid placement for main sections */
+        .header {
+            grid-column: 1 / -1;
+            grid-row: 1;
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            padding: 1rem 2rem;
+        }
+        .map-card {
+            grid-column: 1 / 8;
+            grid-row: 2 / 8;
+            position: relative;
+            padding: 0.75rem;
+        }
+        .kpi-main {
+            grid-column: 8 / 13;
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }
+        /* MODIFICATION START: Styles for new KPI card layout */
+        .kpi-main .card {
+            padding: 1.25rem;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .kpi-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .kpi-icon svg {
+            width: 1.75rem;
+            height: 1.75rem;
+        }
+        /* MODIFICATION END */
+        .provincial-summary-card {
+            grid-column: 8 / 13;
+            grid-row: 4 / 8;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            overflow-y: hidden;
+        }
+        #provincialSummaryContent {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .monthly-trend-card {
+            grid-column: 1 / 5;
+            grid-row: 8 / 12;
+        }
+        .provincial-ranking-card {
+            grid-column: 5 / 9;
+            grid-row: 8 / 12;
+        }
+        .leaderboard-card {
+            grid-column: 9 / 13;
+            grid-row: 8 / 12;
+        }
+
+        /* Leaflet map styling */
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 1.25rem;
+            z-index: 0;
+        }
+        /* MODIFICATION: Improved popup styling */
+        .leaflet-popup-content-wrapper {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            border: 1px solid #d1d5db;
+        }
+        .leaflet-popup-tip { background-color: #fff; }
+        .leaflet-popup-content {
+            margin: 15px !important;
+            font-size: 13px !important;
+            line-height: 1.6 !important;
+        }
+        .leaflet-popup-content-wrapper * { 
+            font-family: 'Montserrat', sans-serif !important; 
+            color: #1f2937; 
+        }
+
+        /* MODIFICATION: New styles for animated map pin */
+        @keyframes dropIn {
+            0% {
+                transform: translateY(-50px) scale(0.5);
+                opacity: 0;
+            }
+            70% {
+                transform: translateY(5px) scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+        .map-pin {
+            animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform-origin: bottom center;
+            filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.3));
+        }
+
+        /* Chart.js specific styling */
+        .chart-container {
+            flex-grow: 1;
+            position: relative;
+            min-height: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Table container for scrolling content within cards */
+        .table-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        .table-container::-webkit-scrollbar { width: 6px; }
+        .table-container::-webkit-scrollbar-track { background: transparent; }
+        .table-container::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+        .table-container thead {
+            background-color: #f3f4f6;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        /* Chart filter button styles */
+        .chart-filter-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+            flex-wrap: wrap; /* Allow buttons to wrap on mobile */
+        }
+        .chart-filter-button {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            background-color: #e0e7ff;
+            color: var(--brand-color);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--brand-light);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(67, 56, 202, 0.1);
+        }
+        .chart-filter-button:hover {
+            background-color: #c7d2fe;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(67, 56, 202, 0.2);
+        }
+        .chart-filter-button.active {
+            background-color: var(--brand-color);
+            color: white;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+            transform: translateY(-1px);
+        }
+        .chart-filter-button.active:hover {
+            transform: translateY(-2px);
+        }
+
+        .update-notification {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            opacity: 0;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--brand-color);
+            color: white;
+            border-radius: 9999px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.4s ease-in-out;
+            z-index: 1000;
+        }
+        .update-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        /* PASSWORD SCREEN STYLES */
+        #password-overlay {
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2f5 100%);
+            transition: opacity 0.5s ease-out;
+        }
+        .password-form {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            width: 90%;
+            max-width: 400px;
+        }
+        .password-form.shake-error {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        .password-form h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .password-form input {
+            padding: 0.75rem 1.25rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.75rem;
+            width: 100%;
+            max-width: 300px;
+            transition: border-color: 0.3s;
+        }
+        .password-form input:focus {
+            outline: none;
+            border-color: var(--brand-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .password-form button {
+            background-color: var(--brand-color);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            transition: all 0.3s;
+        }
+        .password-form button:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(67, 56, 202, 0.4);
+        }
+
+        /* ================================================= */
+        /* == RESPONSIVE STYLES FOR MOBILE AND TABLETS ===== */
+        /* ================================================= */
+        /* ================================================= */
+/* == RESPONSIVE STYLES FOR MOBILE AND TABLETS ===== */
+/* ================================================= */
+        @media screen and (max-width: 768px) {
+            body {
+                overflow-y: scroll; /* Ensure scrolling is always enabled */
+            }
+
+            .dashboard-grid {
+                display: flex;
+                flex-direction: column;
+                height: auto; /* Allow content to determine height */
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+            .card:hover {
+                transform: none; /* Disable hover effect on mobile */
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+                height: auto;
+            }
+            .header > .flex.items-center.justify-center {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+            }
+
+            .header img {
+                height: 2.5rem; /* h-10 */
+            }
+
+            /* Unset all grid properties for mobile */
+            .map-card, .kpi-main, .provincial-summary-card, .monthly-trend-card,
+            .provincial-ranking-card, .leaderboard-card {
+                grid-column: auto;
+                grid-row: auto;
+            }
+
+            .kpi-main {
+                grid-template-columns: 1fr; /* Stack KPI cards vertically */
+                gap: 1rem;
+            }
+            
+            .map-card { min-height: 400px; }
+            .monthly-trend-card, .provincial-ranking-card, .leaderboard-card { min-height: 350px; }
+            .welcome-box { padding: 2rem; }
+            .welcome-subtitle { font-size: 1.75rem; min-height: 3rem; }
+            .welcome-dev-text { font-size: 0.875rem; }
+
+        }
+
+    </style>
+</head>
+<body>
+    <aside id="sidebar" class="fixed top-0 left-0 z-[60] w-64 h-full bg-white shadow-xl">
+        <div class="p-4 border-b">
+            <h2 class="text-xl font-bold text-indigo-600">Dashboard Decks</h2>
+        </div>
+        <nav class="p-4">
+            <ul class="space-y-2">
+                
+                
+                <li>
+                    <a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg bg-indigo-100 text-indigo-700 font-semibold">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <span class="ml-3">DFLT Status Deck</span>
+                    </a>
+                </li>
+                
+                
+                
+                
+                <li>
+                    <a href="Dr_Fareeha_Map_21 July.html" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100">
+                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span class="ml-3">DFLT Trainer's Mapping</span>
+                    </a>
+                </li>
+                                
+                
+                
+                <li>
+                    <a href="Trainings_Locations_Viewers.html" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100">
+                         <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        <span class="ml-3">DFLT Session Locations</span>
+                    </a>
+                </li>
+
+
+
+
+
+                 <li>
+                    <a href="SSPA_Districts_Mapping.html" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100">
+                       <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        <span class="ml-3">SSPA Mapping</span>
+                    </a>
+                </li>
+
+
+
+
+            </ul>
+        </nav>
+    </aside>
+
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden"></div>
+
+    <div id="page-container">
+        <div id="password-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center">
+            <div class="password-form text-center">
+                <h2 class="text-xl font-bold">DFLT Dashboard Access</h2>
+                <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-16 w-auto">
+                <input type="password" id="passwordInput" placeholder="Enter password" class="text-center" />
+                <button id="submitPassword">Access Dashboard</button>
+                <p id="passwordError" class="text-sm text-red-500 hidden">Incorrect password. Please try again.</p>
+            </div>
+        </div>
+        
+        <div id="welcome-overlay" class="welcome-overlay" style="display: none;">
+             <div class="welcome-box">
+                <div class="logos-container">
+                    <img src="https://resume.brightspyre.com/affiliates/INTERACT%20Consulting/Giz%20pic-6493ec850de4e.png" alt="GIZ Logo" class="welcome-logo h-16">
+                    <img src="CASPEE.jpg" alt="CASPEE Logo" class="welcome-logo h-16">
+                    <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="welcome-logo h-16">
+                </div>
+                <h2 id="welcome-title" class="welcome-subtitle"></h2>
+                <p class="welcome-dev-text">Developed by Center of Adaptive Social Protection & Economic Empowerment - SDPI</p>
+            </div>
+        </div>
+
+        <div id="update-notification" class="update-notification">
+            <span class="font-semibold">Updating...</span> Dashboard is refreshing.
+        </div>
+
+        <div class="dashboard-grid" id="dashboard-content" style="display: none;">
+            <header class="card header flex flex-row items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle" class="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    </div>
+
+                <div class="flex items-center justify-center gap-6 flex-grow">
+                    <h1 class="text-xl font-extrabold text-gray-900">DFLT Phase-2 | Status Deck</h1>
+                    <div class="flex items-center gap-2">
+                        <label for="provinceFilter" class="text-xs font-medium text-gray-600">Province:</label>
+                        <select id="provinceFilter" class="block py-1 px-2 border border-gray-300 bg-gray-50 text-gray-900 rounded-md shadow-sm" onchange="updateDashboard()">
+                            <option value="All">All Provinces</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <label for="District_Filter" class="text-xs font-medium text-gray-600">District:</label>
+                        <select id="District_Filter" class="block py-1 px-2 border border-gray-300 bg-gray-50 text-gray-900 rounded-md shadow-sm" onchange="updateDashboard()">
+                            <option value="All">All Districts</option>
+                        </select>
+                    </div>
+                    <div class="text-right">
+                        <p id="currentTime" class="font-bold text-gray-900 text-lg"></p>
+                        <p id="currentDate" class="text-xs text-gray-600"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <img src="CASPEE.jpg" alt="CASPEE Logo" class="h-16 w-auto">
+                    <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-16 w-auto">
+                </div>
+            </header>
+
+            <div class="card map-card !p-1 relative">
+                <div id="map"></div>
+                <div class="absolute top-4 right-4 z-[400]">
+                    <button id="toggleHeatmap" class="px-3 py-1 text-xs text-white bg-gray-800/80 hover:bg-gray-800 rounded-full shadow-lg">Toggle Heatmap</button>
+                </div>
+            </div>
+            
+            <div class="kpi-main">
+                <div class="card">
+                    <div class="flex-grow">
+                        <h3 class="text-sm font-medium text-gray-600">Total Beneficiaries</h3>
+                        <p id="totalBeneficiaries" class="text-4xl font-black text-indigo-600">0</p>
+                        <span class="text-xs text-gray-500 mt-1 block">Target: <span id="beneficiaryOverallTarget">0</span></span>
+                    </div>
+                    <div class="w-20 h-20 relative">
+                        <canvas id="beneficiariesDonutChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex-grow">
+                        <h3 class="text-sm font-medium text-gray-600">Total Trainings</h3>
+                        <p id="totalTrainings" class="text-4xl font-black text-indigo-600">0</p>
+                        <span class="text-xs text-gray-500 mt-1 block">Target: <span id="trainingOverallTarget">0</span></span>
+                    </div>
+                    <div class="w-20 h-20 relative">
+                        <canvas id="trainingsDonutChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                     <div class="flex-grow">
+                        <h3 class="text-sm font-medium text-gray-600">Top District</h3>
+                        <p id="topProvinceName" class="text-2xl font-black text-blue-600 mt-1">N/A</p>
+                        <p id="topProvincePct" class="text-md font-bold text-blue-500 mt-0">0% Target</p>
+                    </div>
+                    <div class="kpi-icon bg-blue-100 text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-6.75c-.621 0-1.125.504-1.125 1.125v3.375m9 0h-9" /></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="card provincial-summary-card">
+                <div class="flex items-center justify-between flex-shrink-0 mb-4">
+                    <h3 id="provincialSummaryTitle" class="text-md font-bold text-gray-800">Provincial Performance Overview</h3>
+                    <div class="flex items-center gap-2">
+                        <label for="provincialCardFilter" class="text-xs font-medium text-gray-600">Filter:</label>
+                        <select id="provincialCardFilter" class="block py-1 px-2 border border-gray-300 bg-gray-50 text-gray-900 rounded-md shadow-sm"></select>
+                    </div>
+                </div>
+                <div id="provincialSummaryContent" class="flex-grow flex flex-col p-1">
+                    <p class="text-gray-500 text-sm text-center">Select a province to view its performance details.</p>
+                </div>
+            </div>
+
+            <div class="card monthly-trend-card">
+                <h3 class="text-md font-bold text-gray-800 flex-shrink-0">Beneficiaries Trend</h3>
+                <div class="chart-filter-buttons">
+                    <button class="chart-filter-button" data-unit="month" data-metric="Beneficiary_Count_Actual">Monthly</button>
+                    <button class="chart-filter-button active" data-unit="day" data-metric="Beneficiary_Count_Actual">Daily</button>
+                </div>
+                <div class="chart-container"><canvas id="monthlyTrendChart"></canvas></div>
+            </div>
+
+            <div class="card provincial-ranking-card">
+                <h3 class="text-md font-bold text-gray-800 flex-shrink-0">Sindh District Ranking</h3>
+                <div class="flex gap-2 mb-2 chart-filter-buttons">
+                    <button class="chart-filter-button active" data-sort-metric="beneficiaries">By Mamta Benefeciaries</button>
+                    <button class="chart-filter-button" data-sort-metric="trainings">By Trainings</button>
+                    <button class="chart-filter-button" data-sort-metric="target_achievement">By Target %</button>
+                    <button class="chart-filter-button" data-sort-metric="district">By Tehsil</button>
+                </div>
+                <div class="table-container mt-2">
+                    <table id="rankingTable" class="w-full text-left text-sm">
+                        <thead class="text-xs text-gray-600 uppercase bg-gray-100"></thead>
+                        <tbody id="provincialRankingTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card leaderboard-card">
+                <h3 class="text-md font-bold text-gray-800 flex-shrink-0">Top Trainers (Monthly Ranking)</h3>
+                <div class="table-container mt-2">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-gray-600 uppercase bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2">Rank</th>
+                                <th class="px-4 py-2">Trainer Pair</th>
+                                <th class="px-4 py-2">Beneficiaries</th>
+                                <th class="px-4 py-2">Target %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div> <script>
+        // Global state variables
+        let trainingData = [], provinceDataSummary = {}, districtDataSummary = {}, provincialRankingsData = [], leaderboardData = [];
+        let occupationsHorizontalBarChart, monthlyTrendChart, ageDistributionChart, beneficiariesDonutChart, trainingsDonutChart;
+        let map, markers, heatLayer;
+
+        // Configuration
+        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT8NQ5r5OQCb5s-KeUP-IAgjQeQp_dKASF4UR1tbeii1qtb18mK4vX1dQex_VltrG1SZv0d9VmD0CSx/pub?gid=0&single=true&output=csv';
+        const TOTAL_PROJECT_TARGET_BENEFICIARIES = 250000;
+        const MONTHLY_TARGET_PER_PAIR = 240;
+        const PASSWORD = "DFLT";
+
+        let globalTargets = {
+            provinces: {
+                "Punjab": {target_beneficiaries: 120000, target_trainings: 3500},
+                "Sindh": {target_beneficiaries: 60000, target_trainings: 2000},
+                "Khyber Pakhtunkhwa": {target_beneficiaries: 65000, target_trainings: 2167},
+                "Balochistan": {target_beneficiaries: 5000, target_trainings: 667}
+            }
+        };
+        
+        // NEW: Province Name Map to handle variations like "KPK"
+        const provinceNameMap = {
+            "KPK": "Khyber Pakhtunkhwa",
+            "KP": "Khyber Pakhtunkhwa"
+        };
+
+        const provinceColors = {
+            "Punjab": "#22c55e", "Sindh": "#3b82f6", "Khyber Pakhtunkhwa": "#f97316", "Balochistan": "#ef4444"
+        };
+        const ageColors = {
+            '18-29': '#3b82f6', '30-39': '#10b981', '40-49': '#f59e0b', '50-59': '#ef4444', '60+': '#a855f7', 'Unknown': '#64748b'
+        };
+
+        Chart.defaults.font.family = "'Montserrat', sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        // =========================================================================
+        // == NEW: INTELLIGENT DATE PARSING FUNCTION (HANDLES MULTIPLE FORMATS) ==
+        // =========================================================================
+        function parseTrainingDate(dateInput) {
+            if (!dateInput) return null;
+
+            // Check if it's an Excel-like serial number (a string of 5 digits)
+            if (/^\d{5}$/.test(dateInput)) {
+                const excelDate = parseInt(dateInput, 10);
+                // Formula to convert Excel serial date to JS Date (accounts for epoch difference and leap year bug)
+                const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+                // Adjust for timezone offset to keep the date consistent
+                jsDate.setMinutes(jsDate.getMinutes() + jsDate.getTimezoneOffset());
+                if (!isNaN(jsDate.getTime())) {
+                    return jsDate;
+                }
+            }
+            
+            // Try parsing as a standard date string
+            const standardDate = new Date(dateInput);
+            if (!isNaN(standardDate.getTime())) {
+                return standardDate;
+            }
+
+            return null; // Return null if all parsing fails
+        }
+
+        async function loadDataAndInitialize() {
+            try {
+                const response = await fetch(`${GOOGLE_SHEET_CSV_URL}&t=${new Date().getTime()}`);
+                if (!response.ok) throw new Error('Failed to fetch data from Google Sheets.');
+                const rawCsv = await response.text();
+                
+                trainingData = processCSVData(rawCsv);
+                if (!trainingData || trainingData.length === 0) throw new Error("No training data found after processing.");
+                
+                preProcessAllData(trainingData);
+                populateFilters(trainingData);
+                initializeMap();
+                initializeCharts();
+                updateDashboard();
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error("Initialization Error:", error);
+                const notification = document.getElementById('update-notification');
+                notification.textContent = `Error: ${error.message}. Please refresh the page.`;
+                notification.classList.add('show');
+            }
+        }
+        
+        function processCSVData(csvText) {
+            const lines = csvText.trim().split('\n');
+            if (lines.length < 2) return [];
+
+            const headerLine = lines[0];
+            const commaCount = (headerLine.match(/,/g) || []).length;
+            const tabCount = (headerLine.match(/\t/g) || []).length;
+            
+            const delimiter = commaCount > tabCount ? ',' : '\t';
+            const robustSplitter = delimiter === ',' ? /,(?=(?:(?:[^"]*"){2})*[^"]*$)/ : /\t/;
+
+            const headers = headerLine.split(delimiter).map(h => h.trim().replace(/"/g, ''));
+            
+            const dataRows = lines.slice(1).map(line => {
+                if (line.trim() === "") return null; // Skip empty lines
+                const values = line.split(robustSplitter).map(v => v.trim().replace(/"/g, ''));
+                return headers.reduce((obj, header, i) => {
+                    obj[header] = values[i] || '';
+                    return obj;
+                }, {});
+            }).filter(Boolean); // Filter out any null rows from empty lines
+
+            const day1Data = dataRows.filter(row => row.main_menu === 'day1');
+            const day2Data = dataRows.filter(row => row.main_menu === 'day2');
+            const day2Attendance = new Map(day2Data.map(row => [row.day2_session_select, new Set((row.beneficiaries_present || '').split(' ').filter(c => c.trim() !== '').map(c => c.replace(/-/g, '')))]));
+
+            const sessionsMap = new Map();
+            day1Data.forEach(row => {
+                const sessionId = row.day1_session_select;
+                if (!sessionId) return;
+                
+                if (!sessionsMap.has(sessionId)) {
+                    sessionsMap.set(sessionId, { ...row, beneficiaries: [], female_occupations: {} });
+                }
+                const session = sessionsMap.get(sessionId);
+
+                const cnicKeys = Object.keys(row).filter(key => key.startsWith('beneficiary_cnic_'));
+
+                cnicKeys.forEach(cnicKey => {
+                    const cnicValue = row[cnicKey];
+                    if (!cnicValue) return; 
+
+                    const index = cnicKey.split('_').pop();
+                    
+                    const standardizedCnic = cnicValue.replace(/[^0-9]/g, '');
+                    session.beneficiaries.push({
+                        cnic: standardizedCnic,
+                        name: row[`beneficiary_name_${index}`],
+                        occupation: row[`occupation_${index}`],
+                        age: parseInt(row[`age_${index}`], 10) || null,
+                        attended_day2: day2Attendance.get(sessionId)?.has(standardizedCnic) || false
+                    });
+
+                    const occupation = row[`occupation_${index}`];
+                    if (occupation) {
+                        session.female_occupations[occupation] = (session.female_occupations[occupation] || 0) + 1;
+                    }
+                });
+            });
+
+            return Array.from(sessionsMap.values()).map(session => {
+                const beneficiaryCount = session.beneficiaries.length;
+                if (beneficiaryCount === 0) return null;
+
+                // **MODIFIED**: Use the new intelligent date parser
+                const trainingDate = parseTrainingDate(session.session_date);
+
+                const attendedDay2Count = session.beneficiaries.filter(b => b.attended_day2).length;
+                const retentionRate = beneficiaryCount > 0 ? (attendedDay2Count / beneficiaryCount) * 100 : 0;
+                let lat = null, lon = null;
+                const locationMatch = (session.training_location || '').match(/(\-?\d+\.\d+)\s(\-?\d+\.\d+)/);
+                if (locationMatch) [lat, lon] = [parseFloat(locationMatch[1]), parseFloat(locationMatch[2])];
+                
+                return {
+                    Training_Date: trainingDate, // Use the parsed date object
+                    Original_Date_String: session.SubmissionDate, // Keep original for reference if needed
+                    Province: session.session_province,
+                    District: session.session_district,
+                    Trainer1: session.session_trainer1,
+                    Trainer2: session.session_trainer2,
+                    Beneficiary_Count_Actual: beneficiaryCount,
+                    Retention_Rate_Pct: parseFloat(retentionRate.toFixed(1)),
+                    Start_Location_Lat: lat,
+                    Start_Location_Lon: lon,
+                    Beneficiaries_Details: session.beneficiaries,
+                    Female_Occupations: session.female_occupations
+                };
+            }).filter(Boolean);
+        }
+        
+        function preProcessAllData(data) {
+            provinceDataSummary = {}; districtDataSummary = {};
+            for (const pName in globalTargets.provinces) {
+                provinceDataSummary[pName] = { trainings: 0, beneficiaries: 0, item_count: 0, total_retention_rate_sum: 0, female_occupations: {}, age_distribution: Object.fromEntries(Object.keys(ageColors).map(k => [k, 0])) };
+            }
+
+            data.forEach(item => {
+                const provinceName = provinceNameMap[item.Province] || item.Province;
+
+                if (!provinceDataSummary[provinceName]) {
+                    console.warn(`Data found for un-targeted or unmapped province: ${item.Province}`);
+                    return; 
+                }
+                const summary = provinceDataSummary[provinceName];
+                summary.trainings++;
+                summary.beneficiaries += item.Beneficiary_Count_Actual;
+                summary.item_count++;
+                summary.total_retention_rate_sum += item.Retention_Rate_Pct;
+                for (const occ in item.Female_Occupations) { summary.female_occupations[occ] = (summary.female_occupations[occ] || 0) + item.Female_Occupations[occ]; }
+                item.Beneficiaries_Details.forEach(b => {
+                    let ageGroup = 'Unknown';
+                    if (b.age >= 18 && b.age <= 29) ageGroup = '18-29';
+                    else if (b.age >= 30 && b.age <= 39) ageGroup = '30-39';
+                    else if (b.age >= 40 && b.age <= 49) ageGroup = '40-49';
+                    else if (b.age >= 50 && b.age <= 59) ageGroup = '50-59';
+                    else if (b.age >= 60) ageGroup = '60+';
+                    summary.age_distribution[ageGroup]++;
+                });
+
+                const districtName = item.District;
+                if (districtName) {
+                    if (!districtDataSummary[districtName]) districtDataSummary[districtName] = { trainings: 0, beneficiaries: 0 };
+                    districtDataSummary[districtName].trainings++;
+                    districtDataSummary[districtName].beneficiaries += item.Beneficiary_Count_Actual;
+                }
+            });
+            for (const pName in provinceDataSummary) {
+                const summary = provinceDataSummary[pName];
+                summary.avg_retention_rate = summary.item_count > 0 ? (summary.total_retention_rate_sum / summary.item_count) : 0;
+            }
+
+            provincialRankingsData = Object.entries(provinceDataSummary).map(([pName, stats]) => ({
+                province: pName,
+                beneficiaries: stats.beneficiaries,
+                trainings: stats.trainings,
+                beneficiary_target_pct: (stats.beneficiaries / (globalTargets.provinces[pName]?.target_beneficiaries || 1)) * 100
+            }));
+            
+            const now = new Date();
+            const trainerPerformance = data
+                .filter(item => {
+                    const itemDate = item.Training_Date; // Already a date object
+                    return itemDate && itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+                })
+                .reduce((acc, item) => {
+                    const t1 = item.Trainer1, t2 = item.Trainer2;
+                    if (!t1) return acc;
+                    const pairKey = [t1, t2].filter(Boolean).sort().join('&');
+                    if (!acc[pairKey]) acc[pairKey] = { beneficiaries: 0, trainings: 0, district: item.District, t1, t2 };
+                    acc[pairKey].beneficiaries += item.Beneficiary_Count_Actual;
+                    acc[pairKey].trainings++;
+                    acc[pairKey].district = item.District;
+                    return acc;
+                }, {});
+
+            leaderboardData = Object.values(trainerPerformance).map(stats => {
+                const capitalize = s => (s || '').charAt(0).toUpperCase() + (s || '').slice(1).replace(/_/g, ' ');
+                let displayName = capitalize(stats.t1);
+                if (stats.t2) displayName += ` & ${capitalize(stats.t2)}`;
+                return {
+                    name: displayName,
+                    district: stats.district,
+                    beneficiaries: stats.beneficiaries,
+                    target_pct: (stats.beneficiaries / MONTHLY_TARGET_PER_PAIR) * 100
+                };
+            }).sort((a, b) => b.beneficiaries - a.beneficiaries).slice(0, 10);
+        }
+
+        // --- The rest of the script is unchanged ---
+
+        function setupEventListeners() {
+            document.querySelectorAll('.provincial-ranking-card .chart-filter-button').forEach(b => b.addEventListener('click', () => {
+                document.querySelectorAll('.provincial-ranking-card .chart-filter-button').forEach(btn => btn.classList.remove('active'));
+                b.classList.add('active');
+                updateProvincialRanking();
+            }));
+            document.querySelectorAll('.monthly-trend-card .chart-filter-button').forEach(b => b.addEventListener('click', () => {
+                document.querySelectorAll('.monthly-trend-card .chart-filter-button').forEach(btn => btn.classList.remove('active'));
+                b.classList.add('active');
+                updateMonthlyTrendChart();
+            }));
+            document.getElementById('provincialCardFilter').addEventListener('change', (e) => updateProvincialSummaryContent(e.target.value));
+            document.getElementById('toggleHeatmap').addEventListener('click', toggleHeatmap);
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+
+        function populateFilters(data) {
+            const provinceFilter = document.getElementById('provinceFilter');
+            const districtFilter = document.getElementById('District_Filter');
+            const provincialCardFilter = document.getElementById('provincialCardFilter');
+
+            const uniqueProvinces = [...new Set(data.map(item => provinceNameMap[item.Province] || item.Province).filter(p => globalTargets.provinces[p]))].sort();
+            const uniqueDistricts = [...new Set(data.map(item => item.District).filter(Boolean))].sort();
+
+            const createOptions = (select, options, firstOption) => {
+                select.innerHTML = `<option value="All">${firstOption}</option>`;
+                options.forEach(opt => select.add(new Option(opt, opt)));
+            };
+
+            createOptions(provinceFilter, uniqueProvinces, 'All Provinces');
+            createOptions(provincialCardFilter, uniqueProvinces, 'All of Pakistan');
+            createOptions(districtFilter, uniqueDistricts, 'All Districts');
+        }
+
+        function initializeMap() {
+            if(map) map.remove();
+            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([30.3753, 69.3451], 5.5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' }).addTo(map);
+            markers = L.featureGroup().addTo(map);
+            heatLayer = L.heatLayer([], { radius: 25, blur: 15, maxZoom: 10, gradient: { 0.4: '#60a5fa', 0.65: '#2dd4bf', 1: '#ef4444' } });
+        }
+
+        function toggleHeatmap() {
+            if (map.hasLayer(heatLayer)) {
+                map.removeLayer(heatLayer); map.addLayer(markers);
+            } else {
+                map.removeLayer(markers); map.addLayer(heatLayer);
+            }
+        }
+
+        function updateDashboard() {
+            updateKPIs();
+            updateMapAndHeatmap();
+            updateLeaderboard();
+            updateProvincialRanking();
+            updateMonthlyTrendChart();
+            const provinceFilterValue = document.getElementById('provinceFilter').value;
+            document.getElementById('provincialCardFilter').value = provinceFilterValue;
+            updateProvincialSummaryContent(provinceFilterValue);
+        }
+
+        function animateValue(obj, end, duration) {
+            let start = parseInt(obj.textContent.replace(/,/g, '') || '0');
+            if (start === end) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.textContent = Math.floor(progress * (end - start) + start).toLocaleString();
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function getFilteredData() {
+            const provinceFilter = document.getElementById('provinceFilter').value;
+            const districtFilter = document.getElementById('District_Filter').value;
+            return trainingData.filter(item => {
+                const standardizedProvince = provinceNameMap[item.Province] || item.Province;
+                return (provinceFilter === 'All' || standardizedProvince === provinceFilter) &&
+                       (districtFilter === 'All' || item.District === districtFilter);
+            });
+        }
+
+        function renderDonutChart(chartInstance, canvasId, percentage, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            const data = {
+                labels: ['Achieved', 'Remaining'],
+                datasets: [{
+                    data: [percentage, 100 - percentage],
+                    backgroundColor: [color, '#e5e7eb'],
+                    borderColor: ['#ffffff'],
+                    borderWidth: 2,
+                    circumference: 360,
+                }]
+            };
+            const options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                },
+                animation: {
+                    animateRotate: true,
+                    duration: 1500
+                }
+            };
+            return new Chart(ctx, { type: 'doughnut', data, options });
+        }
+
+        function updateKPIs() {
+            const data = getFilteredData();
+            const provinceFilter = document.getElementById('provinceFilter').value;
+
+            const totalBeneficiaries = data.reduce((s, i) => s + i.Beneficiary_Count_Actual, 0);
+            const totalTrainings = data.length;
+
+            let targetBeneficiaries, targetTrainings;
+            if (provinceFilter === 'All') {
+                targetBeneficiaries = TOTAL_PROJECT_TARGET_BENEFICIARIES;
+                targetTrainings = Object.values(globalTargets.provinces).reduce((s, p) => s + p.target_trainings, 0);
+            } else {
+                targetBeneficiaries = globalTargets.provinces[provinceFilter]?.target_beneficiaries || 0;
+                targetTrainings = globalTargets.provinces[provinceFilter]?.target_trainings || 0;
+            }
+            
+            animateValue(document.getElementById('totalBeneficiaries'), totalBeneficiaries, 1000);
+            document.getElementById('beneficiaryOverallTarget').textContent = targetBeneficiaries.toLocaleString();
+
+            animateValue(document.getElementById('totalTrainings'), totalTrainings, 1000);
+            document.getElementById('trainingOverallTarget').textContent = targetTrainings.toLocaleString();
+
+            const beneficiaryPct = Math.min(100, (totalBeneficiaries / (targetBeneficiaries||1)) * 100 || 0);
+            const trainingPct = Math.min(100, (totalTrainings / (targetTrainings||1)) * 100 || 0);
+
+            beneficiariesDonutChart = renderDonutChart(beneficiariesDonutChart, 'beneficiariesDonutChart', beneficiaryPct, '#4f46e5');
+            trainingsDonutChart = renderDonutChart(trainingsDonutChart, 'trainingsDonutChart', trainingPct, '#10b981');
+
+            // === MODIFICATION START ===
+
+            // Step 1: Comment out or delete the original auto-calculation logic
+            /*
+            const topProvince = [...provincialRankingsData].sort((a,b) => b.beneficiary_target_pct - a.beneficiary_target_pct)[0];
+            document.getElementById('topProvinceName').textContent = topProvince?.province || 'N/A';
+            document.getElementById('topProvincePct').textContent = `${(topProvince?.beneficiary_target_pct || 0).toFixed(1)}% Target`;
+            */
+
+            // Step 2: Add the new hardcoded values
+            document.getElementById('topProvinceName').textContent = 'Dadu';
+            document.getElementById('topProvincePct').textContent = 'Top Performing District'; // You can change this subtitle text as well
+
+            // === MODIFICATION END ===
+        }
+        
+        function updateMapAndHeatmap() {
+            const data = getFilteredData();
+            markers.clearLayers();
+            const heatPoints = [];
+            const maxBeneficiaryCount = Math.max(...data.map(item => item.Beneficiary_Count_Actual), 1);
+            data.forEach(item => {
+                if (item.Start_Location_Lat && item.Start_Location_Lon) {
+                    const latLng = [item.Start_Location_Lat, item.Start_Location_Lon];
+                    heatPoints.push([...latLng, item.Beneficiary_Count_Actual / maxBeneficiaryCount]);
+
+                    const markerSize = 36;
+                    const pinColor = provinceColors[provinceNameMap[item.Province] || item.Province] || '#4f46e5';
+                    const markerIcon = L.divIcon({
+                        html: `<svg class="map-pin" width="${markerSize}" height="${markerSize}" viewBox="0 0 24 24" fill="${pinColor}" xmlns="http://www.w3.org/2000/svg">
+                                   <path d="M12 0C7.589 0 4 3.589 4 8c0 4.411 8 16 8 16s8-11.589 8-16c0-4.411-3.589-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
+                                  </svg>`,
+                        className: '',
+                        iconSize: [markerSize, markerSize],
+                        iconAnchor: [markerSize / 2, markerSize]
+                    });
+
+                    const popupContent = `
+                        <div style="min-width: 200px;">
+                            <strong style="color: #4f46e5; font-size: 16px; display: block; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 4px;">Session Details</strong>
+                            <b>Trainer 1:</b> ${item.Trainer1 || 'N/A'}<br>
+                            <b>Trainer 2:</b> ${item.Trainer2 || 'N/A'}<br>
+                            <b>Beneficiaries:</b> ${item.Beneficiary_Count_Actual}<br>
+                            <b>Location:</b> ${item.District}, ${item.Province}<br>
+                            <b>Date:</b> ${item.Training_Date ? item.Training_Date.toLocaleDateString() : 'N/A'}
+                        </div>
+                    `;
+                    L.marker(latLng, { icon: markerIcon }).bindPopup(popupContent).addTo(markers);
+                }
+            });
+            heatLayer.setLatLngs(heatPoints);
+            if (data.length > 0 && markers.getLayers().length > 0) {
+                map.fitBounds(markers.getBounds().pad(0.1));
+            } else {
+                map.setView([30.3753, 69.3451], 5.5);
+            }
+        }
+        
+        function updateProvincialSummaryContent(selectedProvinceName) {
+            const contentEl = document.getElementById('provincialSummaryContent');
+            const titleEl = document.getElementById('provincialSummaryTitle');
+            let data;
+            
+            if (selectedProvinceName === 'All') {
+                titleEl.textContent = 'Performance Overview of Pakistan';
+                data = Object.values(provinceDataSummary).reduce((acc, summary) => {
+                    acc.trainings += summary.trainings;
+                    acc.beneficiaries += summary.beneficiaries;
+                    acc.item_count += summary.item_count;
+                    acc.total_retention_rate_sum += summary.total_retention_rate_sum;
+                    for (const occ in summary.female_occupations) acc.female_occupations[occ] = (acc.female_occupations[occ] || 0) + summary.female_occupations[occ];
+                    for (const ageGroup in summary.age_distribution) acc.age_distribution[ageGroup] += summary.age_distribution[ageGroup];
+                    return acc;
+                }, { trainings: 0, beneficiaries: 0, item_count: 0, total_retention_rate_sum: 0, female_occupations: {}, age_distribution: Object.fromEntries(Object.keys(ageColors).map(k => [k, 0])) });
+                data.avg_retention_rate = data.item_count > 0 ? (data.total_retention_rate_sum / data.item_count) : 0;
+            } else {
+                titleEl.textContent = `Provincial Performance Overview for ${selectedProvinceName}`;
+                data = provinceDataSummary[selectedProvinceName];
+            }
+            
+            if (!data || data.beneficiaries === 0) {
+                contentEl.innerHTML = `<p class="text-gray-500 text-sm text-center">No data available for the selected area.</p>`;
+                if (occupationsHorizontalBarChart) occupationsHorizontalBarChart.destroy();
+                if (ageDistributionChart) ageDistributionChart.destroy();
+                return;
+            }
+
+            contentEl.innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-100 p-4 rounded-lg"><h4 class="text-sm text-gray-600">Total Beneficiaries</h4><p class="text-2xl font-bold text-indigo-600">${data.beneficiaries.toLocaleString()}</p></div>
+                    <div class="bg-gray-100 p-4 rounded-lg"><h4 class="text-sm text-gray-600">Total Trainings</h4><p class="text-2xl font-bold text-teal-600">${data.trainings.toLocaleString()}</p></div>
+                    <div class="bg-gray-100 p-4 rounded-lg col-span-2"><h4 class="text-sm text-gray-600">Avg. Retention</h4><p class="text-2xl font-bold text-yellow-600">${(data.avg_retention_rate || 0).toFixed(1)}%</p></div>
+                </div>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4 flex-grow">
+                    <div class="p-4 bg-white rounded-lg flex flex-col min-h-[250px]"><h4 class="text-md font-bold text-gray-800">Top Occupation</h4><div class="chart-container"><canvas id="occupationsHorizontalBarChart"></canvas></div></div>
+                    <div class="p-4 bg-white rounded-lg flex flex-col min-h-[250px]"><h4 class="text-md font-bold text-gray-800">Age Distribution</h4><div class="chart-container"><canvas id="ageDistributionChart"></canvas></div></div>
+                </div>`;
+            
+            renderOccupationsHorizontalBarChart(data.female_occupations);
+            renderAgeDistributionChart(data.age_distribution);
+        }
+        
+        function renderOccupationsHorizontalBarChart(occupations) {
+            const ctx = document.getElementById('occupationsHorizontalBarChart').getContext('2d');
+            if (occupationsHorizontalBarChart) occupationsHorizontalBarChart.destroy();
+            const sortedOccupations = Object.entries(occupations).sort(([,a],[,b]) => b-a).slice(0, 7);
+            occupationsHorizontalBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: sortedOccupations.map(o => o[0]), datasets: [{ data: sortedOccupations.map(o => o[1]), backgroundColor: '#4c51bf' }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
+            });
+        }
+        
+        function renderAgeDistributionChart(ageData) {
+            const ctx = document.getElementById('ageDistributionChart').getContext('2d');
+            if (ageDistributionChart) ageDistributionChart.destroy();
+            ageDistributionChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: Object.keys(ageData), datasets: [{ data: Object.values(ageData), backgroundColor: Object.values(ageColors) }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function initializeCharts() {
+            if (monthlyTrendChart) {
+                monthlyTrendChart.destroy();
+            }
+            const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+            monthlyTrendChart = new Chart(ctx, {
+                type: 'line', data: { labels: [], datasets: [{ data: [] }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    elements: { point: { radius: 0, hoverRadius: 6, hitRadius: 10 } },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { type: 'time', time: { unit: 'day' }, grid: { drawBorder: false, color: '#eef2f5' } },
+                        y: { beginAtZero: true, grid: { drawBorder: false, color: '#eef2f5' } }
+                    }
+                }
+            });
+        }
+
+        function updateMonthlyTrendChart() {
+            const data = getFilteredData();
+            const activeBtn = document.querySelector('.monthly-trend-card .chart-filter-button.active');
+            const unit = activeBtn ? activeBtn.dataset.unit : 'day';
+
+            const aggregatedData = data.reduce((acc, item) => {
+                // **MODIFIED**: Use the pre-parsed date object
+                const date = item.Training_Date;
+                if (!date || isNaN(date.getTime())) return acc; // Skip if date is invalid or null
+
+                const key = unit === 'day' ? date.toISOString().split('T')[0] : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+                acc[key] = (acc[key] || 0) + item.Beneficiary_Count_Actual;
+                return acc;
+            }, {});
+
+            const sortedKeys = Object.keys(aggregatedData).sort();
+            monthlyTrendChart.data.labels = sortedKeys;
+            monthlyTrendChart.data.datasets = [{
+                data: sortedKeys.map(key => aggregatedData[key]),
+                borderColor: '#4f46e5',
+                borderWidth: 2,
+                tension: 0.4, // Smooth curve
+                fill: true,
+                backgroundColor: (context) => {
+                    const gradient = context.chart.ctx.createLinearGradient(0, context.chart.chartArea.bottom, 0, context.chart.chartArea.top);
+                    gradient.addColorStop(0, 'rgba(79, 70, 229, 0)');
+                    gradient.addColorStop(1, 'rgba(79, 70, 229, 0.2)');
+                    return gradient;
+                }
+            }];
+            monthlyTrendChart.options.scales.x.time.unit = unit;
+            monthlyTrendChart.update();
+        }
+
+        function updateProvincialRanking() {
+            const sortMetric = document.querySelector('.provincial-ranking-card .chart-filter-button.active').dataset.sortMetric;
+            const tableBody = document.getElementById('provincialRankingTableBody');
+            const tableHead = document.querySelector('#rankingTable thead');
+
+            if (sortMetric === 'district') {
+                tableHead.innerHTML = `<tr><th class="px-4 py-2">Rank</th><th class="px-4 py-2">District</th><th class="px-4 py-2">Trainings</th><th class="px-4 py-2">Beneficiaries</th></tr>`;
+                const sorted = Object.entries(districtDataSummary).map(([name, stats]) => ({name, ...stats})).sort((a,b) => b.beneficiaries - a.beneficiaries);
+                tableBody.innerHTML = sorted.map((item, i) => `
+                    <tr class="border-b"><td class="px-4 py-2">${i+1}</td><td class="px-4 py-2">${item.name}</td><td class="px-4 py-2">${item.trainings.toLocaleString()}</td><td class="px-4 py-2">${item.beneficiaries.toLocaleString()}</td></tr>
+                `).join('');
+            } else {
+                tableHead.innerHTML = `<tr><th class="px-4 py-2">Rank</th><th class="px-4 py-2">Province</th><th class="px-4 py-2">Beneficiaries</th><th class="px-4 py-2">Trainings</th><th class="px-4 py-2">Target %</th></tr>`;
+                const sorted = [...provincialRankingsData].sort((a, b) => {
+                    if (sortMetric === 'beneficiaries') return b.beneficiaries - a.beneficiaries;
+                    if (sortMetric === 'trainings') return b.trainings - a.trainings;
+                    return b.beneficiary_target_pct - a.beneficiary_target_pct;
+                });
+                tableBody.innerHTML = sorted.map((item, i) => {
+                    const pct = Math.min(100, item.beneficiary_target_pct);
+                    const color = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+                    return `<tr class="border-b"><td class="px-4 py-2">${i+1}</td><td class="px-4 py-2">${item.province}</td><td class="px-4 py-2">${item.beneficiaries.toLocaleString()}</td><td class="px-4 py-2">${item.trainings.toLocaleString()}</td><td class="px-4 py-2"><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${color} h-2.5 rounded-full" style="width: ${pct}%"></div></div><span class="text-xs">${item.beneficiary_target_pct.toFixed(1)}%</span></td></tr>`;
+                }).join('');
+            }
+        }
+        
+        function updateLeaderboard() {
+            const tableBody = document.getElementById('leaderboardTableBody');
+            if (leaderboardData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No trainer data for this month yet.</td></tr>`;
+                return;
+            }
+            tableBody.innerHTML = leaderboardData.map((item, i) => {
+                const pct = Math.min(100, item.target_pct);
+                const color = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+                return `<tr class="border-b"><td class="px-4 py-2">${i+1}</td><td class="px-4 py-2">${item.name} (${item.district})</td><td class="px-4 py-2">${item.beneficiaries.toLocaleString()}</td><td class="px-4 py-2"><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${color} h-2.5 rounded-full" style="width: ${pct}%"></div></div><span class="text-xs">${item.target_pct.toFixed(1)}%</span></td></tr>`;
+            }).join('');
+        }
+
+        function typewriterEffect(element, parts, duration) {
+            element.innerHTML = '';
+            let totalLength = parts.reduce((acc, part) => acc + part.text.length, 0);
+            let delayPerChar = duration / totalLength;
+            let currentHTML = '';
+            let totalDelay = 0;
+
+            parts.forEach(part => {
+                for (let i = 0; i < part.text.length; i++) {
+                    setTimeout(() => {
+                        currentHTML += (i === 0) ? `<span class="${part.class || ''}">${part.text[i]}` : part.text[i];
+                        if (i === part.text.length - 1) currentHTML += '</span>';
+                        element.innerHTML = currentHTML + '<span class="cursor">&nbsp;</span>';
+                    }, totalDelay);
+                    totalDelay += delayPerChar;
+                }
+            });
+
+            setTimeout(() => {
+                element.innerHTML = element.innerHTML.replace(/<span class="cursor">.*?<\/span>/, '');
+            }, totalDelay + 100);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordOverlay = document.getElementById('password-overlay');
+            const welcomeOverlay = document.getElementById('welcome-overlay');
+            const submitPasswordBtn = document.getElementById('submitPassword');
+            const passwordInput = document.getElementById('passwordInput');
+
+            // ===== NEW JAVASCRIPT FOR SIDEBAR =====
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            
+            const toggleSidebar = () => {
+                document.body.classList.toggle('sidebar-open');
+            };
+
+            sidebarToggle.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                toggleSidebar();
+            });
+
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+            // ======================================
+
+
+            function startWelcomeAnimation(isFirstLogin = true) {
+                welcomeOverlay.style.display = 'flex';
+                // Define text parts for typewriter
+                const titleParts = [
+                    { text: 'DFLT Dashboard | ' },
+                    { text: 'GIZ', class: 'text-red-600' }, { text: ', ' },
+                    { text: 'SDPI', class: 'text-blue-600' }, { text: ' & ' },
+                    { text: 'SSPA', class: 'text-green-600' }
+                ];
+                setTimeout(() => typewriterEffect(document.getElementById('welcome-title'), titleParts, 2000), 1500);
+
+                const welcomeScreenDuration = isFirstLogin ? 5000 : 4000;
+                setTimeout(() => {
+                    welcomeOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        welcomeOverlay.style.display = 'none';
+                        document.getElementById('dashboard-content').style.display = 'grid';
+                        welcomeOverlay.style.opacity = '1';
+                        initializeDashboardAndAutoUpdate();
+                    }, 1000);
+                }, welcomeScreenDuration);
+            }
+
+            function initializeDashboardAndAutoUpdate() {
+                // Initial load
+                updateTime();
+                loadDataAndInitialize();
+                
+                // Set up intervals
+                setInterval(updateTime, 1000); // Keep updating the clock
+                setInterval(() => location.reload(), 120000); 
+            }
+
+            if (sessionStorage.getItem('isVerified') === 'true') {
+                passwordOverlay.style.display = 'none';
+                startWelcomeAnimation(false);
+            }
+
+            const handleLogin = () => {
+                if (passwordInput.value === PASSWORD) {
+                    sessionStorage.setItem('isVerified', 'true');
+                    passwordOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        passwordOverlay.style.display = 'none';
+                        startWelcomeAnimation(true);
+                    }, 500);
+                } else {
+                    document.getElementById('passwordError').classList.remove('hidden');
+                    const form = passwordOverlay.querySelector('.password-form');
+                    form.classList.add('shake-error');
+                    setTimeout(() => form.classList.remove('shake-error'), 500);
+                }
+            };
+            submitPasswordBtn.addEventListener('click', handleLogin);
+            passwordInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleLogin());
+        });
+    </script>
+</body>
+</html>

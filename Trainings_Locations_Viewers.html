@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Session Locations</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-start: #e2e8f0;
+            --bg-end: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --border-color: rgba(255, 255, 255, 0.7);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --brand-color: #4f46e5;
+            --brand-light: #6366f1;
+            --brand-dark: #3730a3;
+            --success-color: #22c55e;
+            --error-color: #ef4444;
+            --shadow-light: rgba(79, 70, 229, 0.1);
+            --shadow-heavy: rgba(79, 70, 229, 0.2);
+            --pop-in-transform: scale(0.95) translateY(20px);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-primary);
+            background: linear-gradient(175deg, var(--bg-start), var(--bg-end), var(--bg-start));
+            background-size: 100% 300%;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            animation: animatedGradient 15s ease infinite;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-end); }
+        ::-webkit-scrollbar-thumb { background-color: var(--brand-color); border-radius: 10px; border: 2px solid var(--bg-end); }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .glass-card {
+            background-color: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 var(--shadow-light);
+            padding: 1.5rem 2rem;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease;
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 16px 40px 0 var(--shadow-heavy);
+            transform: translateY(-8px) scale(1.01);
+        }
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            text-align: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .header-logo-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .header-logo-group img {
+            height: 3.5rem;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.1));
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--brand-dark), var(--brand-color), var(--brand-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .clock {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: -0.5rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .clock-updating {
+            color: var(--brand-color);
+            transition: color 0.5s ease-in-out;
+            animation: pulse 1.5s infinite;
+        }
+
+        .filters-grid {
+            display: grid; grid-template-columns: 1fr; gap: 1.5rem;
+        }
+        @media (min-width: 768px) { .filters-grid { grid-template-columns: 2fr 1fr 1fr; } }
+
+        .input-group label {
+            display: block; font-size: 0.875rem; font-weight: 600;
+            color: var(--text-secondary); margin-bottom: 0.5rem;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .input-group .input-wrapper { position: relative; }
+        .input-group input {
+            width: 100%; padding: 0.8rem 1rem; border-radius: 0.75rem;
+            border: 1px solid #e2e8f0; background: #fdfdff;
+            color: var(--text-primary); transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif; font-size: 1rem;
+        }
+        .input-group input:focus {
+            outline: none; border-color: var(--brand-color);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
+            background: #fff;
+        }
+        .input-group .input-icon {
+            position: absolute; left: 1rem; top: 50%;
+            transform: translateY(-50%); color: #94a3b8;
+            transition: color 0.3s ease;
+        }
+        .input-group input:focus + .input-icon { color: var(--brand-color); }
+        .input-group input[type="text"] { padding-left: 2.75rem; }
+        .input-group input[type="date"] { cursor: pointer; }
+
+        .btn {
+            display: flex; width: 100%; align-items: center; justify-content: center;
+            gap: 0.6rem; font-weight: 700; border-radius: 9999px;
+            padding: 0.9rem 1.5rem; transition: all 0.3s ease;
+            cursor: pointer; border: none; font-size: 1rem; text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: var(--brand-color); color: white;
+            background-image: linear-gradient(45deg, var(--brand-dark), var(--brand-light));
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        }
+        .btn-primary:hover {
+            background-position: 100% 0;
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 7px 20px rgba(79, 70, 229, 0.5);
+        }
+        .btn-secondary {
+            background-color: #fff; color: var(--text-primary);
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover {
+            background-color: #f9fafb; transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .btn-disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; transform: none; box-shadow: none; }
+        .btn.copied {
+            background-color: var(--success-color); color: white;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+            transform: translateY(-4px) !important;
+            animation: pulse-success 0.6s ease-out;
+        }
+
+        .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 2rem; }
+        .session-card-content { display: flex; flex-direction: column; gap: 1rem; }
+        .session-card-content > div > span {
+            font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .session-card-content p { font-weight: 500; line-height: 1.5; }
+        .session-card-footer { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+
+        .state-container { text-align: center; margin: 4rem auto; }
+        .loading-spinner {
+            height: 3rem; width: 3rem; margin: 0 auto 1rem;
+            border: 4px solid var(--brand-light); border-top-color: var(--brand-color);
+            border-radius: 50%; animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+        }
+        .hidden { display: none !important; }
+
+        .message-box {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--brand-dark);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .message-box.show {
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes animatedGradient { 0% { background-position: 50% 0%; } 50% { background-position: 50% 100%; } 100% { background-position: 50% 0%; } }
+        @keyframes popIn {
+            0% { opacity: 0; transform: var(--pop-in-transform); filter: blur(5px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse-success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="glass-card header">
+            <div class="header-logo-group">
+                <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo">
+            </div>
+            <h1>DFLT Sessions Locations</h1>
+            <p id="real-time-clock" class="clock">
+                <i class="fa-solid fa-spinner fa-spin"></i> Updating...
+            </p>
+        </header>
+
+        <div class="glass-card">
+            <div class="filters-grid">
+                <div class="input-group">
+                    <label for="search-input">Search by Trainer / IC Name</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                        <input type="text" id="search-input" placeholder="e.g., Maria Rehman, Iram Parveen...">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="start-date">Start Date</label>
+                    <input type="date" id="start-date">
+                </div>
+                <div class="input-group">
+                    <label for="end-date">End Date</label>
+                    <input type="date" id="end-date">
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <button id="reset-filters" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <span>Reset All Filters</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="loading" class="state-container">
+            <div class="loading-spinner"></div>
+            <p>Loading session data...</p>
+        </div>
+
+        <div id="error" class="state-container hidden" role="alert">
+            <i class="fa-solid fa-triangle-exclamation" style="color: var(--error-color); font-size: 3rem;"></i>
+            <h2 style="font-weight: bold; color: var(--error-color);">Data Loading Failed</h2>
+            <p style="margin-top: 0.5rem; color: var(--text-secondary);">Could not fetch session data. Please check the CSV link and try refreshing.</p>
+        </div>
+
+        <main id="sessions-container" class="sessions-grid"></main>
+    </div>
+    
+    <div id="message-box" class="message-box hidden"></div>
+
+    <script>
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWXFF1b0yuMA6qyyY-M0Pryo0WZno-Sl51FgM3OP4sTzvdhTnR7aS3Bb6AbaUxdFR26VR2diEmOlP2/pub?gid=483563144&single=true&output=csv';
+
+        const sessionsContainer = document.getElementById('sessions-container');
+        const loadingElement = document.getElementById('loading');
+        const errorElement = document.getElementById('error');
+        const searchInput = document.getElementById('search-input');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const resetFiltersButton = document.getElementById('reset-filters');
+        const messageBox = document.getElementById('message-box');
+        const clockElement = document.getElementById('real-time-clock');
+
+        let allSessionsData = [];
+
+        // Simple utility function to show a temporary message box
+        function showMessage(message) {
+            messageBox.textContent = message;
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000);
+        }
+
+        // Debounce function to limit how often an event handler is called
+        const debounce = (func, delay) => {
+            let timeout;
+            return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), delay); };
+        };
+
+        // Formats a name string (e.g., 'maria_rehman' to 'Maria Rehman')
+        const formatName = (name) => {
+            if (!name || name.trim() === '') return 'N/A';
+            return name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        };
+
+        // Fetches data from the CSV, parses it, and renders the initial view
+        async function fetchAndRenderSessions() {
+            loadingElement.classList.remove('hidden');
+            errorElement.classList.add('hidden');
+            sessionsContainer.innerHTML = '';
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const csvText = await response.text();
+                const lines = csvText.trim().split('\n');
+                if (lines.length <= 1) throw new Error("No data rows in CSV.");
+                const headers = lines[0].split(',').map(h => h.trim().replace(/\r/g, ''));
+                allSessionsData = lines.slice(1).map(line => {
+                    const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                    const session = {};
+                    headers.forEach((header, index) => {
+                        if (header) {
+                            const rawValue = (values[index] || '').trim();
+                            session[header] = rawValue.replace(/^"|"$/g, '').replace(/\r/g, '');
+                        }
+                    });
+                    return session;
+                }).filter(session => session.session_id && session.session_id.trim() !== '');
+
+                loadingElement.classList.add('hidden');
+                filterAndRenderSessions();
+            } catch (e) {
+                console.error('Failed to load or parse CSV:', e);
+                loadingElement.classList.add('hidden');
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        // Filters the session data based on user input and calls the render function
+        function filterAndRenderSessions() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+            if (startDate) startDate.setHours(0,0,0,0);
+            if (endDate) endDate.setHours(0,0,0,0);
+
+            const filteredSessions = allSessionsData.filter(session => {
+                const searchMatch = [session.trainer_1, session.trainer_2, session.assigned_ic_name]
+                    .some(name => formatName(name).toLowerCase().includes(searchTerm));
+                
+                let dateMatch = true;
+                const submissionDate = session.SubmissionDate ? new Date(session.SubmissionDate) : null;
+                if (submissionDate) submissionDate.setHours(0,0,0,0);
+                
+                if ((startDate && (!submissionDate || submissionDate < startDate)) || 
+                    (endDate && (!submissionDate || submissionDate > endDate))) {
+                    dateMatch = false;
+                }
+                return searchMatch && dateMatch;
+            });
+            renderSessions(filteredSessions);
+        }
+
+        // Renders the session cards to the DOM
+        function renderSessions(sessions) {
+            sessionsContainer.innerHTML = '';
+            if (sessions.length === 0) {
+                sessionsContainer.innerHTML = `<div class="glass-card" style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary); font-weight: 500; font-style: italic; transition-delay: 0.1s; animation-delay: 0.1s;">No sessions found matching your filters.</div>`;
+                return;
+            }
+            sessions.forEach((session, index) => {
+                const coordinatesString = session.session_location ? session.session_location.split(' ').slice(0, 2).join(',') : null;
+                const googleMapsUrl = coordinatesString ? `https://www.google.com/maps/search/?api=1&query=${coordinatesString}` : '#';
+                const hasLocation = !!coordinatesString;
+                const trainer1 = formatName(session.trainer_1);
+                const trainer2 = formatName(session.trainer_2);
+                const trainerText = (trainer2 !== 'N/A') ? `${trainer1} & ${trainer2}` : trainer1;
+                const icName = formatName(session.assigned_ic_name);
+                const submissionDate = session.SubmissionDate ? new Date(session.SubmissionDate) : null;
+                const formattedDate = submissionDate && !isNaN(submissionDate) 
+                    ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(submissionDate) 
+                    : 'N/A';
+                
+                const card = document.createElement('div');
+                card.className = 'glass-card';
+                card.style.animation = `popIn 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${index * 0.07}s forwards`;
+                card.innerHTML = `
+                    <div class="session-card-content">
+                        <div><span>Trainers</span><p style="font-size: 1.1rem; font-weight: bold;">${trainerText}</p></div>
+                        <div><span>Session ID</span><p style="font-size: 1rem; word-break: break-all;">${session.session_id || 'N/A'}</p></div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div><span>Location</span><p>${session.province_select || 'N/A'} - ${session.district_select || 'N/A'}</p></div>
+                            <div><span>IC</span><p>${icName}</p></div>
+                        </div>
+                        <div><span>Submission Date</span><p>${formattedDate}</p></div>
+                    </div>
+                    <div class="session-card-footer">
+                        <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary ${!hasLocation ? 'btn-disabled' : ''}">
+                            <i class="fa-solid fa-map-pin"></i><span>View on Map</span></a>
+                        <button class="btn btn-secondary ${!hasLocation ? 'btn-disabled' : ''}" onclick="copyToClipboard('${coordinatesString}', this)">
+                            <i class="fa-solid fa-copy"></i><span>Copy Coordinates</span></button>
+                    </div>`;
+                sessionsContainer.appendChild(card);
+            });
+        }
+        
+        // Updates the clock element with the current date and time
+        function updateClock() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true };
+            const formattedDate = now.toLocaleString('en-US', options);
+            clockElement.textContent = formattedDate;
+        }
+        
+        // Handle the clock update cycle
+        function handleClockUpdate() {
+            // Display a temporary "Updating..." message with animation
+            clockElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+            clockElement.classList.add('clock-updating');
+
+            // Wait a moment for the animation before updating the time
+            setTimeout(() => {
+                updateClock();
+                clockElement.classList.remove('clock-updating');
+            }, 500); // Wait 0.5 seconds for a smooth transition
+        }
+
+        // Copies the location coordinates to the clipboard and provides visual feedback
+        async function copyToClipboard(text, button) {
+            if (!text || button.classList.contains('btn-disabled')) return;
+            try {
+                // Use the modern Clipboard API
+                await navigator.clipboard.writeText(text);
+                const originalText = button.querySelector('span').textContent;
+                button.classList.add('copied');
+                button.innerHTML = `<i class="fa-solid fa-check"></i><span>Copied!</span>`;
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = `<i class="fa-solid fa-copy"></i><span>${originalText}</span>`;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text:', err);
+                showMessage("Could not copy to clipboard.");
+            }
+        }
+
+        // Attach event listeners using the debounced function
+        const debouncedFilter = debounce(filterAndRenderSessions, 300);
+        searchInput.addEventListener('input', debouncedFilter);
+        startDateInput.addEventListener('change', filterAndRenderSessions);
+        endDateInput.addEventListener('change', filterAndRenderSessions);
+        resetFiltersButton.addEventListener('click', () => {
+            searchInput.value = '';
+            startDateInput.value = '';
+            endDateInput.value = '';
+            filterAndRenderSessions();
+        });
+
+        // Expose the function to the global scope so it can be used in onclick attributes
+        window.copyToClipboard = copyToClipboard;
+        
+        // Initial data fetch and clock update on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAndRenderSessions();
+            updateClock();
+            // Update the clock every 5 minutes (300,000 milliseconds)
+            setInterval(handleClockUpdate, 300000);
+        });
+    </script>
+</body>
+</html>

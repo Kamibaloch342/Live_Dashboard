@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Phase 2 - QA Session Matrix</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f7faff;
+            --card-bg: #ffffff;
+            --border-color: #e9edf5;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --accent-main: #2563eb; /* Blue-600 */
+            --accent-light: #eff6ff; /* Blue-50 */
+            --shadow-subtle: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+            --shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 0.75rem; /* rounded-xl */
+        }
+        body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-color); color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: 70px 6fr 4fr; gap: 1.5rem; height: 100vh; padding: 1.5rem; }
+        .card { background-color: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 1.25rem; box-shadow: var(--shadow-subtle); display: flex; flex-direction: column; min-height: 0; animation: fadeIn 0.8s ease forwards; opacity: 0; transition: all 0.3s ease-in-out; }
+        .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+        select, button { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background-color: var(--card-bg); font-size: 0.8rem; font-weight: 500; transition: all 0.2s ease; cursor: pointer; }
+        select { -moz-appearance: none; -webkit-appearance: none; appearance: none; padding-right: 2.5rem; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 14px 14px; }
+        button:hover, select:hover { border-color: var(--accent-main); color: var(--accent-main); }
+        .scrollable { overflow-y: auto; } .scrollable::-webkit-scrollbar { width: 5px; } .scrollable::-webkit-scrollbar-track { background: transparent; } .scrollable::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+        
+        /* Layout */
+        .header { grid-column: 1 / -1; grid-row: 1; }
+        .session-matrix-card { grid-column: 1 / -1; grid-row: 2; }
+        .stats-card { grid-column: 1 / 4; grid-row: 3; }
+        .breakdown-card { grid-column: 4 / 7; grid-row: 3; }
+        .notes-card { grid-column: 7 / 10; grid-row: 3; }
+        .map-card { grid-column: 10 / -1; grid-row: 3; }
+
+        /* Session Matrix Table */
+        #sessionMatrix table { border-collapse: separate; border-spacing: 0; width: 100%; table-layout: fixed; }
+        #sessionMatrix th, #sessionMatrix td { padding: 0.6rem 0.5rem; font-size: 0.75rem; text-align: center; border-bottom: 1px solid var(--border-color); }
+        #sessionMatrix thead th { position: sticky; top: 0; background-color: #f8fafc; font-weight: 600; white-space: nowrap; z-index: 10;}
+        #sessionMatrix tbody.trainer-group-header td { background-color: #f9fafb; font-weight: 700; font-size: 0.85rem; text-align: left; position: sticky; top: 37px; z-index: 9;}
+        #sessionMatrix tr.session-row { cursor: pointer; transition: background-color 0.2s ease; }
+        #sessionMatrix .trainer-sessions tr:nth-child(odd) { background-color: #fafbff; }
+        #sessionMatrix tr.session-row:hover { background-color: var(--accent-light); }
+        #sessionMatrix tr.session-row.selected { background-color: var(--accent-main) !important; color: white; }
+        #sessionMatrix tr.session-row.selected td { border-color: var(--accent-main); }
+        #sessionMatrix .topic-col-start { border-left: 2px solid var(--border-color); }
+        #sessionMatrix .concept-bar-fill { height: 100%; border-radius: 3px; }
+        #sessionMatrix .check-icon { color: #16a34a; }
+        #sessionMatrix .cross-icon { color: #dc2626; }
+        .concept-coverage-bar-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .concept-bar-fill { height: 4px; border-radius: 2px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes counter-pop { 0% { transform: translateY(5px); opacity: 0.5; } 100% { transform: translateY(0); opacity: 1; } }
+        .stat-value { animation: counter-pop 0.5s ease-out; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-grid">
+        <header class="card header flex flex-row items-center justify-between !py-3 !shadow-none">
+            <div class="flex items-center gap-4"><img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo" class="h-10"><h1 class="text-xl font-bold text-gray-800">QA Session Matrix</h1></div>
+            <div class="flex items-center gap-3">
+                <select id="organizationFilter" class="w-44" onchange="handleFilterChange('organization', this.value)"></select>
+                <select id="provinceFilter" class="w-44" onchange="handleFilterChange('province', this.value)"></select>
+                <select id="trainerFilter" class="w-44" onchange="handleFilterChange('trainer', this.value)"></select>
+                <button id="clearFiltersBtn" onclick="clearFilters()">Clear Filters</button>
+                <div class="text-right pl-4 border-l border-gray-200"><p id="currentTime" class="font-bold text-lg text-gray-700"></p><p id="currentDate" class="text-xs text-gray-500"></p></div>
+            </div>
+        </header>
+
+        <div class="card session-matrix-card"><h3 class="text-base font-bold mb-2">Session by Session Analysis</h3><div id="sessionMatrix" class="scrollable flex-grow"></div></div>
+        
+        <div class="card stats-card"><h3 class="text-base font-bold mb-2">Overall Statistics</h3><div id="overallStats" class="flex-grow flex flex-col justify-around text-center">
+            <div><p class="text-sm text-gray-500">Total Sessions</p><p id="totalSessions" class="text-3xl font-bold text-accent-main">-</p></div>
+            <div><p class="text-sm text-gray-500">Average Coverage</p><p id="avgCoverage" class="text-3xl font-bold text-accent-main">-</p></div>
+            <div><p class="text-sm text-gray-500">Unique Trainers</p><p id="uniqueTrainers" class="text-3xl font-bold text-accent-main">-</p></div>
+        </div></div>
+
+        <div class="card breakdown-card"><h3 class="text-base font-bold mb-2" id="breakdownTitle">Concept Breakdown</h3><div class="relative flex-grow"><canvas id="breakdownChart"></canvas></div></div>
+        <div class="card notes-card"><h3 class="text-base font-bold mb-2" id="notesTitle">Session Details</h3><div id="notesContent" class="scrollable flex-grow space-y-3 text-sm"></div></div>
+        <div class="card map-card !p-0"><div id="qaMap" class="h-full w-full rounded-lg"></div></div>
+    </div>
+
+<script>
+// --- MASTER DATA & CONFIG ---
+const SYLLABUS = { 
+    "Intro": ["SSPA Intro", "Storytelling"], 
+    "Money Mgmt": ["Know When", "Count & Confirm", "No Deductions"], 
+    "Financial Plan": ["Budgeting", "Saving", "Investment"], 
+    "Banking": ["Account Types", "Bank Services", "ATM Demo"], 
+    "Risks": ["Fraud Types", "Loan Mgmt", "NSER Importance"], 
+    "Practical": ["Calculator Use", "Saving Number", "Reading SMS"] 
+};
+const ALL_CONCEPTS_MAIN = Object.keys(SYLLABUS);
+const ALL_SUB_CONCEPTS = [].concat(...Object.values(SYLLABUS));
+
+const mockQaData = [
+    { SessionID: "S001", Observer: "QA-A", Trainer: "Ali Raza", Province: "Punjab", Date: "2025-07-25", GPS: [31.52, 74.35], Notes: "Excellent engagement, but skipped the ATM Demo.", Concepts_Covered: ["SSPA Intro", "Storytelling", "Know When", "Count & Confirm", "No Deductions", "Budgeting", "Saving", "Investment", "Account Types", "Bank Services", "Fraud Types", "Loan Mgmt", "NSER Importance", "Calculator Use", "Saving Number", "Reading SMS"], Organization: "SDPI",
+      Venue_Quality: null, Mobilization_Retention_Rate: null, Training_Quality: 88, Trainer_Performance: 92
+    },
+    { SessionID: "S002", Observer: "QA-B", Trainer: "Sana Khan", Province: "Sindh", Date: "2025-07-24", GPS: [24.86, 67.01], Notes: "Covered all topics thoroughly. Very impressive.", Concepts_Covered: ["SSPA Intro", "Storytelling", "Know When", "Count & Confirm", "No Deductions", "Budgeting", "Saving", "Investment", "Account Types", "Bank Services", "ATM Demo", "Fraud Types", "Loan Mgmt", "NSER Importance", "Calculator Use", "Saving Number", "Reading SMS"], Organization: "SSPA",
+      Venue_Quality: 90, Mobilization_Retention_Rate: 85, Training_Quality: null, Trainer_Performance: null
+    },
+    { SessionID: "S003", Observer: "QA-A", Trainer: "Usman Malik", Province: "KPK", Date: "2025-07-23", GPS: [34.01, 71.52], Notes: "Rushed through the 'Risks' section.", Concepts_Covered: ["SSPA Intro", "Storytelling", "Know When", "Count & Confirm", "No Deductions", "Budgeting", "Saving", "Account Types", "Bank Services", "ATM Demo", "NSER Importance", "Calculator Use", "Saving Number", "Reading SMS"], Organization: "SDPI",
+      Venue_Quality: null, Mobilization_Retention_Rate: null, Training_Quality: 75, Trainer_Performance: 68
+    },
+    { SessionID: "S004", Observer: "QA-C", Trainer: "Fatima Ahmed", Province: "Balochistan", Date: "2025-07-22", GPS: [30.21, 67.01], Notes: "Good practical demos, weak on banking theory.", Concepts_Covered: ["SSPA Intro", "Storytelling", "Know When", "Count & Confirm", "No Deductions", "Budgeting", "Saving", "Investment", "Fraud Types", "Loan Mgmt", "NSER Importance", "Calculator Use", "Saving Number", "Reading SMS"], Organization: "SSPA",
+      Venue_Quality: 70, Mobilization_Retention_Rate: 78, Training_Quality: null, Trainer_Performance: null
+    },
+    { SessionID: "S005", Observer: "QA-B", Trainer: "Ali Raza", Province: "Punjab", Date: "2025-07-21", GPS: [31.41, 73.07], Notes: "Solid session overall, good pace.", Concepts_Covered: ["SSPA Intro", "Storytelling", "Know When", "Count & Confirm", "No Deductions", "Budgeting", "Saving", "Investment", "Account Types", "Bank Services", "ATM Demo", "Fraud Types", "Loan Mgmt", "NSER Importance", "Calculator Use", "Saving Number", "Reading SMS"], Organization: "SDPI",
+      Venue_Quality: null, Mobilization_Retention_Rate: null, Training_Quality: 80, Trainer_Performance: 85
+    },
+    { SessionID: "S006", Observer: "QA-A", Trainer: "Sana Khan", Province: "Sindh", Date: "2025-07-20", GPS: [24.90, 67.05], Notes: "Forgot to cover loan management.", Concepts_Covered: ["SSPA Intro", "Storytelling", "Know When", "Count & Confirm", "No Deductions", "Budgeting", "Saving", "Investment", "Account Types", "Bank Services", "ATM Demo", "Fraud Types", "NSER Importance", "Calculator Use", "Saving Number", "Reading SMS"], Organization: "SSPA",
+      Venue_Quality: 85, Mobilization_Retention_Rate: 70, Training_Quality: null, Trainer_Performance: null
+    },
+];
+let breakdownChart, qaMap, heatLayer, selectedSessionId = null;
+let currentFilters = { organization: 'All', province: 'All', trainer: 'All' };
+
+// --- ICONS ---
+const ICONS = {
+    plus: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>`,
+    minus: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>`,
+    building: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 11-2 0V4H6v12a1 1 0 11-2 0V4zm3 4a1 1 0 011-1h2a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 011-1h2a1 1 0 110 2H8a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>`,
+    chalkboard: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.042.822l-2 4a1 1 0 001.736.866l2-4a1 1 0 00-.166-1.086l5.75-2.92a1 1 0 000-1.84l-7-3zM12 10a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1z" /><path d="M3 12a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1zM5 10a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1zM7 12a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1zM9 10a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1zM11 12a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1zM13 10a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1zM15 12a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1zM17 10a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1z" /></svg>`
+};
+
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+    initializeDashboard();
+    updateDashboard();
+});
+
+function initializeDashboard() {
+    updateTime(); setInterval(updateTime, 1000);
+    populateFilters();
+    breakdownChart = new Chart('breakdownChart', { type: 'bar', options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { font: { size: 10 } } }, x: { min: 0, max: 100, grid: { display: false } } }, plugins: { legend: { display: false }, tooltip: { enabled: false } } } });
+    qaMap = L.map('qaMap', { zoomControl: true, attributionControl: false }).setView([30.37, 69.34], 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png').addTo(qaMap);
+    heatLayer = L.heatLayer([], { radius: 25 }).addTo(qaMap);
+}
+
+// --- INTERACTIVITY ---
+function handleFilterChange(key, value) {
+    currentFilters[key] = value;
+    if (key === 'province' || key === 'organization') {
+        currentFilters.trainer = 'All';
+        populateTrainerFilter(currentFilters.province, currentFilters.organization);
+    }
+    updateDashboard();
+}
+
+function clearFilters() {
+    currentFilters = { organization: 'All', province: 'All', trainer: 'All' };
+    selectedSessionId = null;
+    document.getElementById('organizationFilter').value = 'All';
+    document.getElementById('provinceFilter').value = 'All';
+    populateTrainerFilter('All', 'All');
+    document.getElementById('trainerFilter').value = 'All';
+    updateDashboard();
+}
+
+function selectSession(sessionId) {
+    selectedSessionId = sessionId;
+    document.querySelectorAll('.session-row').forEach(row => row.classList.remove('selected'));
+    const selectedRow = document.getElementById(sessionId);
+    if (selectedRow) selectedRow.classList.add('selected');
+    const sessionData = mockQaData.find(s => s.SessionID === sessionId);
+    if (sessionData) renderDetails(sessionData);
+}
+
+function toggleTrainerSessions(trainerName) {
+    const tbody = document.getElementById(`trainer-body-${trainerName}`);
+    const icon = document.getElementById(`toggle-icon-${trainerName}`);
+    const isHidden = tbody.classList.toggle('hidden');
+    icon.innerHTML = isHidden ? ICONS.plus : ICONS.minus;
+}
+
+// --- RENDERING ---
+function updateDashboard() {
+    const { organization, province, trainer } = currentFilters;
+    const filteredData = mockQaData.filter(item => 
+        (organization === 'All' || item.Organization === organization) &&
+        (province === 'All' || item.Province === province) &&
+        (trainer === 'All' || item.Trainer === trainer)
+    );
+    renderSessionMatrix(filteredData);
+    updateOverallStats(filteredData);
+    updateMapHeatmap(filteredData);
+
+    const sessionToRender = mockQaData.find(s => s.SessionID === selectedSessionId);
+    if (filteredData.length > 0 && (!sessionToRender || !filteredData.includes(sessionToRender))) {
+        selectedSessionId = filteredData[0].SessionID;
+        renderDetails(filteredData[0]);
+    } else if (sessionToRender && filteredData.includes(sessionToRender)) {
+        renderDetails(sessionToRender);
+    } else {
+        selectedSessionId = null;
+        renderDetails(null);
+    }
+    if (selectedSessionId) {
+        document.getElementById(selectedSessionId)?.classList.add('selected');
+    }
+}
+
+function renderSessionMatrix(data) {
+    const matrixDiv = document.getElementById('sessionMatrix');
+    const groupedByTrainer = data.reduce((acc, session) => {
+        (acc[session.Trainer] = acc[session.Trainer] || []).push(session);
+        return acc;
+    }, {});
+
+    let tableHTML = '<table><thead><tr><th class="!text-left w-1/4">Trainer / Session Date</th>';
+    tableHTML += '<th>SSPA<br>Venue</th>';
+    tableHTML += '<th>SSPA<br>Mobilization</th>';
+    tableHTML += '<th>SDPI<br>Training</th>';
+    tableHTML += '<th>SDPI<br>Performance</th>';
+    ALL_CONCEPTS_MAIN.forEach((c, index) => { 
+        const subConcepts = SYLLABUS[c].join(', ');
+        const classAttr = index === 0 ? 'class="topic-col-start"' : '';
+        tableHTML += `<th ${classAttr} title="${subConcepts}">${c}</th>`; 
+    });
+    tableHTML += '</tr></thead>';
+
+    for (const trainerName in groupedByTrainer) {
+        const sessions = groupedByTrainer[trainerName];
+        tableHTML += `<tbody class="trainer-group-header">
+            <tr>
+                <td class="!text-left">
+                    <button class="mr-2" onclick="toggleTrainerSessions('${trainerName}')"><span id="toggle-icon-${trainerName}">${ICONS.minus}</span></button>
+                    ${trainerName}
+                </td>
+                <td colspan="4"></td> 
+                <td colspan="${ALL_CONCEPTS_MAIN.length}" class="topic-col-start"></td> 
+            </tr>
+        </tbody>`;
+        
+        tableHTML += `<tbody class="trainer-sessions" id="trainer-body-${trainerName}">`;
+        sessions.forEach(s => {
+            tableHTML += `<tr class="session-row ${s.SessionID === selectedSessionId ? 'selected' : ''}" id="${s.SessionID}" onclick="selectSession('${s.SessionID}')">
+                <td class="!text-left pl-10 text-gray-500">${s.Date} (Observed by ${s.Observer})</td>`;
+            
+            // SSPA Data
+            tableHTML += `<td>${s.Organization === 'SSPA' ? `<span class="font-bold ${s.Venue_Quality >= 80 ? 'text-green-600' : 'text-red-600'}">${s.Venue_Quality}%</span>` : '—'}</td>`;
+            tableHTML += `<td>${s.Organization === 'SSPA' ? `<span class="font-bold ${s.Mobilization_Retention_Rate >= 80 ? 'text-green-600' : 'text-red-600'}">${s.Mobilization_Retention_Rate}%</span>` : '—'}</td>`;
+
+            // SDPI Data
+            tableHTML += `<td>${s.Organization === 'SDPI' ? `<span class="font-bold ${s.Training_Quality >= 80 ? 'text-green-600' : 'text-red-600'}">${s.Training_Quality}%</span>` : '—'}</td>`;
+            tableHTML += `<td>${s.Organization === 'SDPI' ? `<span class="font-bold ${s.Trainer_Performance >= 80 ? 'text-green-600' : 'text-red-600'}">${s.Trainer_Performance}%</span>` : '—'}</td>`;
+
+            // Topic Completion
+            ALL_CONCEPTS_MAIN.forEach((mainConcept, index) => {
+                const classAttr = index === 0 ? 'class="topic-col-start"' : '';
+                const conceptsInSection = SYLLABUS[mainConcept];
+                const coveredCount = conceptsInSection.filter(c => s.Concepts_Covered.includes(c)).length;
+                const percentCovered = (conceptsInSection.length > 0) ? (coveredCount / conceptsInSection.length) * 100 : 0;
+                tableHTML += `<td ${classAttr}>
+                    <div class="concept-coverage-bar-wrapper">
+                        <div class="bar-container w-full h-2 rounded-sm bg-gray-200">
+                            <div class="concept-bar-fill" style="width: ${percentCovered.toFixed(0)}%; background-color: ${percentCovered === 100 ? '#22c55e' : (percentCovered > 0 ? '#fbbf24' : '#ef4444')};"></div>
+                        </div>
+                        <span class="text-xs mt-1">${percentCovered.toFixed(0)}%</span>
+                    </div>
+                </td>`;
+            });
+            tableHTML += `</tr>`;
+        });
+        tableHTML += `</tbody>`;
+    }
+    matrixDiv.innerHTML = tableHTML;
+}
+
+function renderDetails(sessionData) {
+    const notesTitle = document.getElementById('notesTitle');
+    const notesContent = document.getElementById('notesContent');
+    const breakdownTitle = document.getElementById('breakdownTitle');
+    
+    if (!sessionData) {
+        notesTitle.textContent = 'Session Details';
+        notesContent.innerHTML = `<p class="text-center text-gray-500 p-8">Click on a session row to see details here, or filter to see available sessions.</p>`;
+        breakdownTitle.textContent = 'Concept Breakdown';
+        breakdownChart.data = { labels: [], datasets: [] };
+        breakdownChart.update();
+        qaMap.eachLayer(layer => { if (layer instanceof L.Marker) qaMap.removeLayer(layer); });
+        qaMap.setView([30.37, 69.34], 5);
+        return;
+    }
+
+    notesTitle.textContent = `Details for Session ${sessionData.SessionID}`;
+    const missedConcepts = ALL_SUB_CONCEPTS.filter(c => !sessionData.Concepts_Covered.includes(c));
+    let missedConceptsHTML = '';
+    if (missedConcepts.length > 0) {
+        missedConceptsHTML = `<div class="p-3 bg-red-50 rounded-lg border border-red-200">
+            <p class="font-semibold text-red-700">Missed Concepts:</p>
+            <ul class="list-disc list-inside text-red-600 text-xs mt-1">${missedConcepts.map(mc => `<li>${mc}</li>`).join('')}</ul>
+        </div>`;
+    } else {
+        missedConceptsHTML = `<div class="p-3 bg-green-50 rounded-lg border border-green-200"><p class="font-semibold text-green-700">✓ All concepts covered successfully!</p></div>`;
+    }
+
+    let orgMetricsHTML = '';
+    if (sessionData.Organization === 'SSPA') {
+        orgMetricsHTML = `<hr class="my-3 border-gray-200">
+            <h4 class="text-md font-bold mb-2 text-blue-800 flex items-center">${ICONS.building} SSPA Responsibilities</h4>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-blue-50/50 rounded-lg border border-blue-100 text-center"><p class="font-semibold text-sm">Venue Quality</p><p class="font-bold text-lg ${sessionData.Venue_Quality >= 80 ? 'text-green-700' : 'text-red-700'}">${sessionData.Venue_Quality}%</p></div>
+                <div class="p-3 bg-blue-50/50 rounded-lg border border-blue-100 text-center"><p class="font-semibold text-sm">Mobilization Rate</p><p class="font-bold text-lg ${sessionData.Mobilization_Retention_Rate >= 80 ? 'text-green-700' : 'text-red-700'}">${sessionData.Mobilization_Retention_Rate}%</p></div>
+            </div>`;
+    } else if (sessionData.Organization === 'SDPI') {
+        orgMetricsHTML = `<hr class="my-3 border-gray-200">
+            <h4 class="text-md font-bold mb-2 text-red-800 flex items-center">${ICONS.chalkboard} SDPI Responsibilities</h4>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-red-50/50 rounded-lg border border-red-100 text-center"><p class="font-semibold text-sm">Training Quality</p><p class="font-bold text-lg ${sessionData.Training_Quality >= 80 ? 'text-green-700' : 'text-red-700'}">${sessionData.Training_Quality}%</p></div>
+                <div class="p-3 bg-red-50/50 rounded-lg border border-red-100 text-center"><p class="font-semibold text-sm">Trainer Performance</p><p class="font-bold text-lg ${sessionData.Trainer_Performance >= 80 ? 'text-green-700' : 'text-red-700'}">${sessionData.Trainer_Performance}%</p></div>
+            </div>`;
+    }
+
+    notesContent.innerHTML = `
+        <div class="p-3 bg-slate-50/70 rounded-lg border">
+            <p class="font-semibold text-xs text-gray-500">SESSION / TRAINER / OBSERVER</p>
+            <p><span class="font-bold text-accent-main">${sessionData.SessionID}</span> / ${sessionData.Trainer} / ${sessionData.Observer} on ${sessionData.Date}</p>
+        </div>
+        <div class="p-3 bg-slate-50/70 rounded-lg border">
+            <p class="font-semibold text-xs text-gray-500">OBSERVER'S GENERAL NOTES</p>
+            <p class="italic">"${sessionData.Notes}"</p>
+        </div>
+        ${missedConceptsHTML}
+        ${orgMetricsHTML}`;
+
+    breakdownTitle.textContent = `Breakdown for Session ${sessionData.SessionID}`;
+    const sortedBreakdownData = ALL_SUB_CONCEPTS.map(c => ({ name: c, value: sessionData.Concepts_Covered.includes(c) ? 100 : 0 })).sort((a, b) => a.value - b.value);
+    breakdownChart.data = {
+        labels: sortedBreakdownData.map(d => d.name),
+        datasets: [{ data: sortedBreakdownData.map(d => d.value), backgroundColor: sortedBreakdownData.map(d => d.value === 100 ? '#16a34a' : '#ef4444') }]
+    };
+    breakdownChart.update();
+
+    qaMap.eachLayer(layer => { if (layer instanceof L.Marker) qaMap.removeLayer(layer); });
+    const marker = L.marker(sessionData.GPS).bindPopup(`<b>${sessionData.Trainer}</b><br>Session: ${sessionData.SessionID}`).addTo(qaMap);
+    qaMap.setView(sessionData.GPS, 13);
+    marker.openPopup();
+}
+
+function updateOverallStats(data) {
+    const totalSessions = data.length;
+    const uniqueTrainers = new Set(data.map(d => d.Trainer)).size;
+    const totalConceptsCovered = data.reduce((sum, session) => sum + session.Concepts_Covered.length, 0);
+    const overallPossibleConcepts = ALL_SUB_CONCEPTS.length * totalSessions;
+    const avgCoverage = totalSessions > 0 ? (totalConceptsCovered / overallPossibleConcepts * 100) : 0;
+
+    document.getElementById('totalSessions').innerHTML = `<span class="stat-value">${totalSessions}</span>`;
+    document.getElementById('avgCoverage').innerHTML = `<span class="stat-value">${avgCoverage.toFixed(1)}%</span>`;
+    document.getElementById('uniqueTrainers').innerHTML = `<span class="stat-value">${uniqueTrainers}</span>`;
+}
+
+function updateMapHeatmap(data) {
+    if (heatLayer) qaMap.removeLayer(heatLayer);
+    const heatData = data.map(d => [...d.GPS, 0.7]);
+    heatLayer = L.heatLayer(heatData, { radius: 25, maxZoom: 14 }).addTo(qaMap);
+
+    if (selectedSessionId) {
+        const sessionData = data.find(s => s.SessionID === selectedSessionId);
+        if (sessionData) {
+            qaMap.eachLayer(layer => { if (layer instanceof L.Marker) qaMap.removeLayer(layer); });
+            L.marker(sessionData.GPS).bindPopup(`<b>${sessionData.Trainer}</b><br>Session: ${sessionData.SessionID}`).addTo(qaMap).openPopup();
+            qaMap.setView(sessionData.GPS, 13);
+        }
+    } else {
+        if (heatData.length > 0) {
+            const latLngs = heatData.map(d => L.latLng(d[0], d[1]));
+            qaMap.fitBounds(L.latLngBounds(latLngs), { padding: [50, 50] });
+        } else {
+            qaMap.setView([30.37, 69.34], 5);
+        }
+    }
+}
+
+
+// --- GENERIC HELPERS ---
+function populateFilters() {
+    const orgFilter = document.getElementById('organizationFilter');
+    const organizations = [...new Set(mockQaData.map(d => d.Organization))].sort();
+    orgFilter.innerHTML = ['All', ...organizations].map(val => `<option value="${val}">${val} Organizations</option>`).join('').replace('value="All">All', 'value="All">All');
+
+    const provFilter = document.getElementById('provinceFilter');
+    const provinces = [...new Set(mockQaData.map(d => d.Province))].sort();
+    provFilter.innerHTML = ['All', ...provinces].map(val => `<option value="${val}">${val}</option>`).join('').replace('value="All">All', 'value="All">All Provinces');
+    
+    populateTrainerFilter('All', 'All');
+}
+
+function populateTrainerFilter(province, organization) {
+    const trainerFilter = document.getElementById('trainerFilter');
+    let filteredTrainers = mockQaData;
+    if (organization !== 'All') filteredTrainers = filteredTrainers.filter(d => d.Organization === organization);
+    if (province !== 'All') filteredTrainers = filteredTrainers.filter(d => d.Province === province);
+    const uniqueTrainers = [...new Set(filteredTrainers.map(d => d.Trainer))].sort();
+    trainerFilter.innerHTML = ['All', ...uniqueTrainers].map(val => `<option value="${val}">${val}</option>`).join('').replace('value="All">All', 'value="All">All Trainers');
+}
+
+function updateTime() {
+    const now = new Date();
+    document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Trainer Performance Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        /* --- BASIC SETUP & FONTS --- */
+        :root {
+            --bg-color: #eef1f8; /* Lighter, more modern background */
+            --card-bg: #ffffff;
+            --border-color: #dbe2ef; /* Softer border */
+            --text-primary: #2c3a4f; /* Darker, richer text */
+            --text-secondary: #7b8fa7; /* Muted secondary text */
+            --accent-main: #4a69bd; /* Deep blue, slightly more muted */
+            --accent-light: #e6ecfb; /* Lighter blue for backgrounds/hovers */
+            --accent-success: #3cb371; /* Vibrant green */
+            --accent-warning: #f1c40f; /* Clear yellow */
+            --accent-danger: #e74c3c; /* Strong red */
+            --shadow-elevation-1: 0 4px 12px rgba(0,0,0,0.08); /* Subtle lift */
+            --shadow-elevation-2: 0 8px 20px rgba(0,0,0,0.12); /* More pronounced for hover */
+            --radius-sm: 0.5rem;
+            --radius-md: 1rem;
+            --radius-lg: 1.5rem; /* Larger for cards */
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /* --- LAYOUT --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: auto 1fr 1fr 1fr;
+            gap: 1.75rem; /* Consistent gap */
+            height: 100vh;
+            padding: 1.75rem; /* Consistent padding */
+            overflow-y: auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 2rem; /* Consistent padding inside cards */
+            box-shadow: var(--shadow-elevation-1);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            transition: all 0.3s ease; /* Smooth transitions for card interactions */
+            overflow: hidden; /* POLISH: Force content to be clipped, preventing overflow from breaking the grid layout. */
+        }
+
+        /* Card Hover Effect */
+        .card:hover:not(.header) { /* Exclude header from general card hover */
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-elevation-2);
+        }
+
+        /* Grid Area Assignments */
+        .header { grid-column: 1 / -1; }
+        .trainer-summary-card { grid-column: 1 / 4; }
+        .session-stats-card { grid-column: 4 / 7; }
+        .compliance-card { grid-column: 7 / -1; }
+        .topic-coverage-card { grid-column: 1 / 7; }
+        .issues-feedback-card { grid-column: 7 / -1; }
+        .beneficiary-demographics-card { grid-column: 1 / 7; }
+        .beneficiary-financial-card { grid-column: 7 / -1; }
+        
+        /* --- COMPONENTS --- */
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-logo img {
+            height: 52px; /* Consistent logo size */
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .header-logo h1 {
+            font-size: 1.8rem; /* Consistent title size */
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+        }
+        .header-logo h2 {
+            font-size: 1.1rem; /* Consistent subtitle size */
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+            margin-bottom: 0;
+        }
+
+
+        .filters {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem; /* Consistent filter gap */
+            flex-wrap: wrap;
+        }
+
+        .time-display {
+            text-align: right;
+            padding-left: 1.5rem;
+            border-left: 1px solid var(--border-color);
+            line-height: 1.3;
+        }
+
+        .time-display p {
+            margin: 0;
+        }
+
+        .time-display #currentTime {
+            font-size: 1.4rem; /* Consistent time font size */
+            font-weight: 700;
+            color: var(--accent-main);
+        }
+
+        .time-display #currentDate {
+            font-size: 0.85rem; /* Consistent date font size */
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        /* POLISH: Refactored filter styles for correctness and clarity */
+        /* Common styles for all filter inputs/buttons */
+        select, button, input[type="date"] {
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        /* Specific styles for SELECT to add a custom dropdown arrow */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237b8fa7'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem; /* Add extra padding to prevent text overlapping the arrow */
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background: none;
+            display: inline-block;
+            cursor: pointer;
+            width: 1rem;
+            height: 1rem;
+            margin-left: 0.5rem;
+            filter: grayscale(100%) brightness(0.8);
+        }
+
+        select:hover, button:hover, input[type="date"]:hover {
+            border-color: var(--accent-main);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transform: translateY(-1px);
+        }
+
+        button#clearFiltersBtn {
+            background-color: var(--accent-light);
+            color: var(--accent-main);
+            border-color: var(--accent-light);
+            font-weight: 600;
+        }
+
+        button#clearFiltersBtn:hover {
+            background-color: var(--accent-main);
+            color: var(--card-bg);
+            border-color: var(--accent-main);
+        }
+
+        h3 {
+            font-size: 1.3rem; /* Consistent card title size */
+            font-weight: 700;
+            margin: 0 0 1.5rem 0; /* Consistent margin below title */
+            color: var(--text-primary);
+        }
+        
+        /*
+         * SOLUTION: The primary fix for the layout issue.
+         * By making the content wrapper a growing flex item with its own scrolling,
+         * we ensure that any content that is too tall for the card's fixed height
+         * becomes scrollable instead of breaking out of its container.
+        */
+        .card-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            flex-grow: 1;
+            min-height: 0;      /* Crucial for allowing flex children to shrink properly */
+            overflow-y: auto;   /* THE KEY FIX: Enables vertical scrolling for overflowing content */
+            scrollbar-width: thin;
+            scrollbar-color: #a7b7c9 transparent;
+        }
+        .card-content-wrapper::-webkit-scrollbar { width: 8px; }
+        .card-content-wrapper::-webkit-scrollbar-track { background: transparent; }
+        .card-content-wrapper::-webkit-scrollbar-thumb { background-color: #8c9cb1; border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+        .stats-grid-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .stat-item {
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            background-color: var(--bg-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(74,105,189,0.05) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            transition: width 0.4s ease, height 0.4s ease;
+            z-index: 0;
+        }
+
+        .stat-item:hover::before {
+            width: 200%;
+            height: 200%;
+        }
+
+        .stat-item p {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-item p:first-child {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0 0 0.5rem 0;
+            font-weight: 500;
+        }
+
+        .stat-item p:last-child {
+            font-size: 2.2rem; /* Consistent stat numbers size */
+            font-weight: 800;
+            color: var(--accent-main);
+            margin: 0;
+            line-height: 1;
+        }
+
+        .stat-item p.beneficiary-trained-value { color: var(--accent-success); }
+        .stat-item p.handbooks-value { color: var(--accent-main); }
+        .stat-item p.compliance-value { color: var(--accent-main); }
+
+        /* Segment switcher common styling */
+        .segment-switcher {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.25rem; /* Consistent margin below */
+            background-color: var(--bg-color);
+            border-radius: var(--radius-sm);
+            padding: 0.4rem;
+            flex-shrink: 0; /* Prevent switcher from shrinking */
+        }
+        .segment-switcher button {
+            flex: 1;
+            padding: 0.6rem 0.8rem;
+            border: none;
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+        .segment-switcher button.active {
+            background-color: var(--accent-main);
+            color: var(--card-bg);
+            box-shadow: var(--shadow-elevation-1);
+        }
+        .segment-switcher button:not(.active):hover {
+            background-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        /* The original .scrollable class is now mostly handled by .card-content-wrapper */
+        /* It is kept for targeted scrolling if ever needed and for its scrollbar styles */
+        .scrollable {
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #a7b7c9 transparent;
+        }
+
+        .scrollable::-webkit-scrollbar { width: 8px; }
+        .scrollable::-webkit-scrollbar-track { background: transparent; }
+        .scrollable::-webkit-scrollbar-thumb { background-color: #8c9cb1; border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            text-align: center;
+            padding: 1.5rem;
+            font-weight: 500;
+            min-height: 150px; /* Give empty states some minimum height */
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            table-layout: fixed;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem 0.8rem; /* Consistent table cell padding */
+            font-size: 0.88rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f6f8fc;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 0.78rem;
+            border-top: none;
+            border-bottom: 2px solid var(--border-color);
+            z-index: 1; /* Ensure header stays above scrolling content */
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: var(--accent-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        tbody tr.selected {
+            background-color: var(--accent-main) !important;
+            color: white;
+            box-shadow: inset 0 0 0 2px var(--accent-main), 0 4px 15px rgba(0,0,0,0.2);
+            transform: translateY(-2px) scale(1.005);
+        }
+        tbody tr.selected td {
+            color: white;
+        }
+        tbody tr.selected .coverage-bar-full span {
+            color: white;
+        }
+
+
+        .coverage-bar-full {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            width: 100%;
+        }
+
+        .bar-container {
+            flex-grow: 1;
+            height: 10px;
+            background-color: var(--border-color);
+            border-radius: 5px;
+            overflow: hidden; /* Crucial for animation containment */
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 5px; /* Must match container for perfect fit */
+            transition: width 0.5s ease-out; /* Slower, smoother animation */
+            animation: fadeIn 0.8s ease-out; /* Fade in animation */
+        }
+
+        .coverage-bar-full span {
+            font-weight: 600;
+            width: 48px; /* Sufficient width for percentage text */
+            min-width: 48px; /* Ensure it doesn't shrink */
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            flex-shrink: 0; /* Prevents text from shrinking */
+            white-space: nowrap; /* Prevents text from wrapping */
+        }
+
+        /* Static chart (Compliance, Languages, Issues, Beneficiary) */
+        .static-chart-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* Consistent spacing between bars */
+            justify-content: center;
+        }
+
+        .static-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 0.9rem;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .static-bar-label {
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-primary);
+            font-weight: 500;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .static-bar-wrapper {
+            flex-grow: 1;
+            height: 16px;
+            background-color: var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .static-bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.6s ease-out;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        .static-bar-value {
+            font-weight: 700;
+            font-size: 0.85rem;
+            width: 48px;
+            min-width: 48px;
+            text-align: right;
+            color: var(--text-primary);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        /* Issues & Feedback Specific */
+        .issues-feedback-card .card-content-wrapper {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+        .issues-feedback-card .card-content-wrapper > div {
+            flex: 1;
+            min-width: 280px;
+        }
+        .issues-feedback-card .card-content-wrapper > div:first-child {
+            padding-right: 0.75rem;
+        }
+        .issues-feedback-card .card-content-wrapper > div:last-child {
+            padding-left: 0.75rem;
+            border-left: 1px solid var(--border-color);
+        }
+        
+        /* The wrapper now handles scrolling, so specific max-height is less critical but can be kept for initial sizing */
+        .issues-feedback-card .scrollable {
+            max-height: 250px;
+            padding-right: 0.5rem;
+        }
+
+        .issues-feedback-card ul {
+            list-style: none;
+            margin:0;
+            padding-left: 0;
+            font-size: 0.85rem;
+        }
+        .issues-feedback-card ul li {
+            margin-bottom: 0.7rem;
+            line-height: 1.5;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        .issues-feedback-card ul li::before {
+            content: '•';
+            color: var(--accent-main);
+            position: absolute;
+            left: 0;
+            font-size: 1.2em;
+            line-height: 1;
+            top: 0;
+        }
+        .issues-feedback-card strong {
+            color: var(--text-primary);
+        }
+        .issues-feedback-card p {
+            margin: 0;
+        }
+
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { width: 0; opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1400px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(8, 1fr);
+                gap: 1.5rem;
+                padding: 1.5rem;
+            }
+            .trainer-summary-card { grid-column: 1 / 5; }
+            .session-stats-card { grid-column: 5 / 9; }
+            .compliance-card { grid-column: 1 / 9; }
+            .topic-coverage-card { grid-column: 1 / 9; }
+            .issues-feedback-card { grid-column: 1 / 9; }
+            .beneficiary-demographics-card { grid-column: 1 / 9; }
+            .beneficiary-financial-card { grid-column: 1 / 9; }
+            .header-logo h1 { font-size: 1.6rem; }
+            h3 { font-size: 1.2rem; }
+            .stat-item p:last-child { font-size: 2rem; }
+            .stats-grid-3 { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1.25rem;
+                padding: 1.25rem;
+            }
+            .trainer-summary-card, .session-stats-card, .compliance-card,
+            .topic-coverage-card, .issues-feedback-card, .beneficiary-demographics-card,
+            .beneficiary-financial-card {
+                grid-column: 1 / -1; /* All cards span full width */
+            }
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .filters {
+                width: 100%;
+                justify-content: center;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .time-display {
+                border-left: none;
+                padding-left: 0;
+                text-align: center;
+                width: 100%;
+            }
+            .issues-feedback-card .card-content-wrapper {
+                flex-direction: column;
+            }
+            .issues-feedback-card .card-content-wrapper > div {
+                width: 100%;
+                padding-left: 0;
+                padding-right: 0;
+                border-left: none;
+            }
+            .static-bar-label { width: 80px; min-width: 80px; }
+            .segment-switcher {
+                flex-direction: column;
+            }
+            .stats-grid-3 { grid-template-columns: 1fr; }
+            .beneficiary-demographics-card .stats-grid,
+            .beneficiary-financial-card .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .dashboard-grid {
+                padding: 1rem;
+                gap: 1rem;
+            }
+            .card {
+                padding: 1.5rem;
+            }
+            .header-logo img { height: 45px; }
+            .header-logo h1 { font-size: 1.4rem; }
+            h3 { font-size: 1.1rem; margin-bottom: 1rem;}
+            .stat-item p:last-child { font-size: 1.8rem; }
+            .filters select, .filters button, .filters input {
+                font-size: 0.85rem;
+                padding: 0.6rem 1rem;
+            }
+            th, td { padding: 0.7rem 0.5rem; font-size: 0.8rem; }
+            .static-bar-label { width: 70px; min-width: 70px; }
+            .coverage-bar-full span, .static-bar-value { width: 40px; min-width: 40px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-grid">
+        <header class="card header">
+            <div class="header-content">
+                <div class="header-logo">
+                    <img src="https://www.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo">
+                    <div>
+                        <h1>DFLT Trainer Performance Dashboard</h1>
+                        <h2 id="trainerDashboardSubtitle">Overview for All Trainers</h2>
+                    </div>
+                </div>
+                <div class="filters">
+                    <input type="date" id="startDateFilter" title="Start Date">
+                    <input type="date" id="endDateFilter" title="End Date">
+                    <select id="provinceFilter" title="Filter by Province"></select>
+                    <select id="trainerFilter" title="Filter by Trainer"></select>
+                    <button id="clearFiltersBtn">Clear All Filters</button>
+                    <div class="time-display">
+                        <p id="currentTime"></p>
+                        <p id="currentDate"></p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="card trainer-summary-card">
+            <h3>Trainer Activity Summary</h3>
+            <div class="card-content-wrapper">
+                <div class="stats-grid">
+                    <div class="stat-item"><p>Total Sessions Conducted</p><p id="totalSessionsConducted">-</p></div>
+                    <div class="stat-item"><p>Avg. Beneficiaries per Session</p><p id="avgBeneficiariesPerSession">-</p></div>
+                    <div class="stat-item"><p>Total Beneficiaries Trained</p><p id="totalBeneficiariesTrained" class="beneficiary-trained-value">-</p></div>
+                    <div class="stat-item"><p>Total Handbooks Distributed</p><p id="totalHandbooksDistributed" class="handbooks-value">-</p></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card session-stats-card">
+            <h3>Session Details & Languages</h3>
+            <div class="card-content-wrapper">
+                <div>
+                    <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0; text-align: center;">Avg. Session Duration</p>
+                    <p id="avgSessionDuration" style="font-size: 2.2rem; font-weight: 800; color: var(--accent-main); text-align: center; margin-top: 0;"></p>
+                </div>
+                <div>
+                    <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Training Languages Used</p>
+                    <div id="languageDistributionChart" class="static-chart-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card compliance-card">
+            <h3>Compliance Metrics</h3>
+            <div class="card-content-wrapper">
+                <div class="stats-grid stats-grid-3">
+                    <div class="stat-item"><p>IC Contacted Rate</p><p id="icContactedRate" class="compliance-value">-</p></div>
+                    <div class="stat-item"><p>Audio Recording Compliance</p><p id="audioRecordingCompliance" class="compliance-value">-</p></div>
+                    <div class="stat-item"><p>CNIC Picture Capture Rate</p><p id="cnicPictureCaptureRate" class="compliance-value">-</p></div>
+                </div>
+                <div>
+                    <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">IC Contact Modes</p>
+                    <div id="icContactModeChart" class="static-chart-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card topic-coverage-card">
+            <h3>Topics Covered Overview</h3>
+            <div class="card-content-wrapper">
+                <div id="topicCoverageTable"></div>
+            </div>
+        </div>
+
+        <div class="card issues-feedback-card">
+            <h3>Issues & Feedback</h3>
+            <div class="card-content-wrapper"> 
+                <div> 
+                    <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Issues Encountered</p>
+                    <div id="issueTypeChart" class="static-chart-container"></div>
+                </div>
+                <div> 
+                    <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Issue Descriptions</p>
+                    <div id="issueDescriptionList" class="scrollable"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card beneficiary-demographics-card">
+            <h3>Beneficiary Demographics</h3>
+            <div class="card-content-wrapper">
+                <div class="segment-switcher">
+                    <button id="beneficiaryAll" class="active" data-segment="All">All Beneficiaries</button>
+                    <button id="beneficiaryUrban" data-segment="Urban">Urban</button>
+                    <button id="beneficiaryRural" data-segment="Rural">Rural</button>
+                </div>
+                <div class="stats-grid"> 
+                    <div>
+                        <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Educational Level</p>
+                        <div id="educationalLevelChart" class="static-chart-container"></div>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Age Distribution</p>
+                        <div id="ageDistributionChart" class="static-chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card beneficiary-financial-card">
+            <h3>Beneficiary Financial Insights</h3>
+            <div class="card-content-wrapper">
+                <div class="stats-grid"> 
+                    <div>
+                        <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Mobile Money Account</p>
+                        <div id="mobileMoneyChart" class="static-chart-container"></div>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Bank Account Ownership</p>
+                        <div id="bankAccountChart" class="static-chart-container"></div>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Loan Taken in Last 6 Months</p>
+                        <div id="loanTakenChart" class="static-chart-container"></div>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; font-size: 1rem; margin: 0 0 1rem 0;">Cell Phone Ownership</p>
+                        <div id="cellPhoneOwnershipChart" class="static-chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const DashboardApp = {
+    // --- MASTER DATA & CONFIG ---
+    TRAINING_TOPICS: [
+        "Section 1: Introduction", "Section 2: Financial Literacy Basics", "Section 3: Mobile Money Explained",
+        "Section 4: Saving Strategies", "Section 5: Understanding Loans", "Section 6: Climate Change Awareness",
+        "Section 7: Health & Hygiene", "Section 8: Entrepreneurship Skills", "Section 9: Digital Safety",
+        "Section 10: Q&A and Next Steps"
+    ],
+    mockTrainingSessionData: [], // Will be populated with live data
+    mockBeneficiaryData: [], // Will be populated with live data
+
+    // --- APP STATE ---
+    filters: { province: 'All', trainer: 'All', startDate: null, endDate: null, beneficiaryLocationType: 'All' },
+    
+    /**
+     * Initializes the entire application.
+     */
+    init() {
+        this.setupEventListeners();
+        this.updateTime();
+        setInterval(() => this.updateTime(), 1000);
+        this.loadDataAndPopulateDashboard();
+    },
+
+    /**
+     * Fetches and parses the CSV data from the Google Sheet.
+     * @param {string} url - The URL to the Google Sheet CSV export.
+     * @returns {Promise<Array>} A promise that resolves to an array of data objects.
+     */
+    async fetchAndParseData(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const text = await response.text();
+            const data = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+            console.log("Fetched and parsed data:", data);
+            return data;
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+            alert("Failed to load data from the Google Sheet. Please check the network connection or the URL.");
+            return [];
+        }
+    },
+
+    /**
+     * Processes the raw, messy CSV data into two clean, separate arrays.
+     * @param {Array} rawData - The raw data array from the CSV.
+     * @returns {object} An object containing two arrays: trainingSessions and beneficiaries.
+     */
+    processRawData(rawData) {
+        const trainingSessions = [];
+        const beneficiaries = [];
+        const processedSessionIds = new Set();
+        
+        rawData.forEach(row => {
+            // Process session data, ensuring no duplicates based on session ID
+            if (row.session_id_1 && !processedSessionIds.has(row.session_id_1)) {
+                // Determine trainer name, prioritizing trainer1
+                const trainer = row.session_trainer1_d1 || row.session_trainer2_d1;
+                
+                const session = {
+                    SessionID: row.session_id_1,
+                    Trainer: trainer,
+                    Province: row.session_province_d1,
+                    Date: row.session_date_d1,
+                    Location_Type: row.training_location,
+                    // The following data is missing or not in a standard format in the sheet
+                    // We'll use placeholder or default values for now.
+                    Language_of_Training: ["Urdu"], // Assuming Urdu is the primary language
+                    Training_Start_Time: "09:00", 
+                    Training_End_Time: "11:00",
+                    Audio_Recorded: true, // Assuming this is a default compliance metric
+                    Issue_Other: false, // Not available in the data
+                    
+                    // Convert string values to correct types
+                    Beneficiaries_Attended: parseInt(row.beneficiary_count) || 0,
+                    Beneficiaries_Trained: parseInt(row.beneficiary_count) || 0,
+                    Handbooks_Distributed: parseInt(row.beneficiary_count) || 0,
+                    
+                    // Boolean conversions
+                    IC_Contacted: row.ic_contacted === 'yes',
+                    Issue_IC: row.issue_ic === 'yes',
+                    Issue_Beneficiary: row.issue_beneficiaries === 'yes',
+
+                    // Use the correct issue description column based on the issue type
+                    Issue_Description: row.issue_ic === 'yes' ? row.issue_description_ic : (row.issue_beneficiaries === 'yes' ? row.issue_description_bene : ""),
+                    IC_Mode_of_Contact: row.ic_contact_mode || 'N/A',
+                    Topics_Covered: this.TRAINING_TOPICS, // This data isn't in the sheet, so use the mock list
+                };
+                trainingSessions.push(session);
+                processedSessionIds.add(row.session_id_1);
+            }
+
+            // Process beneficiary data
+            if (row.bene_id_1) {
+                const session = trainingSessions.find(s => s.SessionID === row.session_id_1);
+                const beneficiary = {
+                    SessionID: row.session_id_1,
+                    Location_Type: session ? session.Location_Type : 'N/A',
+                    Beneficiary_Name: row.bene_name_1,
+                    Age: parseInt(row.age_1) || 0,
+                    Education: row.education_1,
+                    CNIC_Front_Pic: !!row.cnic_front_1,
+                    CNIC_Back_Pic: !!row.cnic_back_1,
+                    Cell_Phone: row.own_phone_1 === 'yes',
+                    Mobile_Money_Account: row.has_mobile_money_1 === 'yes',
+                    Bank_Account: row.has_bank_account_1 === 'yes',
+                    Loan_Taken_6_Months: row.taken_loan_1 === 'yes',
+                };
+                beneficiaries.push(beneficiary);
+            }
+        });
+        return { trainingSessions, beneficiaries };
+    },
+
+    /**
+     * Loads the live data and populates the dashboard.
+     */
+    async loadDataAndPopulateDashboard() {
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBeQ7n6FlnejucgskwuuRemWSv3yoV_qBfvAHkk5LdD9uS2bFe-Pko214V3uM7jTfhwhWh3jmL3SW-/pub?gid=723215175&single=true&output=csv';
+        const rawData = await this.fetchAndParseData(csvUrl);
+        const { trainingSessions, beneficiaries } = this.processRawData(rawData);
+
+        this.mockTrainingSessionData = trainingSessions;
+        this.mockBeneficiaryData = beneficiaries;
+        
+        console.log("Processed Training Sessions:", this.mockTrainingSessionData);
+        console.log("Processed Beneficiaries:", this.mockBeneficiaryData);
+
+        this.populateFilters();
+        this.updateDashboard();
+    },
+
+    /**
+     * Sets up all event listeners for filters and interactive elements.
+     */
+    setupEventListeners() {
+        document.getElementById('provinceFilter').addEventListener('change', (e) => this.handleFilterChange('province', e.target.value));
+        document.getElementById('trainerFilter').addEventListener('change', (e) => this.handleFilterChange('trainer', e.target.value));
+        document.getElementById('startDateFilter').addEventListener('change', (e) => this.handleFilterChange('startDate', e.target.value));
+        document.getElementById('endDateFilter').addEventListener('change', (e) => this.handleFilterChange('endDate', e.target.value));
+        document.getElementById('clearFiltersBtn').addEventListener('click', () => this.clearFilters());
+        document.getElementById('beneficiaryAll').addEventListener('click', () => this.handleBeneficiaryLocationTypeChange('All'));
+        document.getElementById('beneficiaryUrban').addEventListener('click', () => this.handleBeneficiaryLocationTypeChange('Urban'));
+        document.getElementById('beneficiaryRural').addEventListener('click', () => this.handleBeneficiaryLocationTypeChange('Rural'));
+    },
+    
+    /**
+     * The main update function. It gets fresh data based on filters
+     * and calls all the render methods to update the UI.
+     */
+    updateDashboard() {
+        const filteredSessions = this.getFilteredSessions();
+        const filteredBeneficiaries = this.getFilteredBeneficiaries(filteredSessions);
+
+        this.renderHeaderSubtitle(this.filters.trainer);
+        this.renderTrainerSummary(filteredSessions);
+        this.renderSessionDetailsAndLanguages(filteredSessions);
+        this.renderComplianceMetrics(filteredSessions, filteredBeneficiaries);
+        this.renderTopicCoverage(filteredSessions);
+        this.renderIssuesAndFeedback(filteredSessions);
+        this.renderBeneficiaryDemographics(filteredBeneficiaries);
+        this.renderBeneficiaryFinancialInsights(filteredBeneficiaries);
+    },
+    
+    getFilteredSessions() {
+        const { province, trainer, startDate, endDate } = this.filters;
+        return this.mockTrainingSessionData.filter(item => {
+            const itemDate = new Date(item.Date);
+            const start = startDate ? new Date(startDate) : null;
+            const end = endDate ? new Date(endDate) : null;
+
+            if (start) start.setHours(0, 0, 0, 0);
+            if (end) end.setHours(23, 59, 59, 999);
+            itemDate.setHours(0, 0, 0, 0);
+
+            return (province === 'All' || item.Province === province) &&
+                   (trainer === 'All' || item.Trainer === trainer) &&
+                   (!start || itemDate >= start) &&
+                   (!end || itemDate <= end);
+        });
+    },
+
+    getFilteredBeneficiaries(filteredSessions) {
+        const { beneficiaryLocationType } = this.filters;
+        const sessionIDs = new Set(filteredSessions.map(s => s.SessionID));
+        
+        return this.mockBeneficiaryData.filter(b => {
+            return sessionIDs.has(b.SessionID) &&
+                   (beneficiaryLocationType === 'All' || b.Location_Type === beneficiaryLocationType);
+        });
+    },
+
+    // --- RENDER FUNCTIONS --- //
+    renderHeaderSubtitle(trainerName) {
+        const subtitleElement = document.getElementById('trainerDashboardSubtitle');
+        subtitleElement.textContent = trainerName === 'All' ? 'Overview for All Trainers' : `Performance for ${trainerName}`;
+    },
+
+    renderTrainerSummary(data) {
+        const totalSessions = data.length;
+        const totalBeneficiaries = data.reduce((sum, s) => sum + s.Beneficiaries_Trained, 0);
+        const totalHandbooks = data.reduce((sum, s) => sum + s.Handbooks_Distributed, 0);
+        const avgBeneficiaries = totalSessions > 0 ? (totalBeneficiaries / totalSessions).toFixed(0) : '0';
+
+        document.getElementById('totalSessionsConducted').textContent = totalSessions.toLocaleString();
+        document.getElementById('totalBeneficiariesTrained').textContent = totalBeneficiaries.toLocaleString();
+        document.getElementById('totalHandbooksDistributed').textContent = totalHandbooks.toLocaleString();
+        document.getElementById('avgBeneficiariesPerSession').textContent = avgBeneficiaries;
+    },
+
+    renderSessionDetailsAndLanguages(data) {
+        if (data.length === 0) {
+            document.getElementById('avgSessionDuration').textContent = 'N/A';
+            document.getElementById('languageDistributionChart').innerHTML = '<div class="empty-state">No data</div>';
+            return;
+        }
+
+        let totalDurationMinutes = 0;
+        const languageCounts = {};
+
+        data.forEach(session => {
+            const startParts = session.Training_Start_Time.split(':').map(Number);
+            const endParts = session.Training_End_Time.split(':').map(Number);
+            
+            const start = new Date(2000, 0, 1, startParts[0], startParts[1]);
+            let end = new Date(2000, 0, 1, endParts[0], endParts[1]);
+
+            if (end < start) end = new Date(end.getTime() + (24 * 60 * 60 * 1000));
+
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                totalDurationMinutes += (end - start) / (1000 * 60);
+            }
+            session.Language_of_Training.forEach(lang => {
+                languageCounts[lang] = (languageCounts[lang] || 0) + 1;
+            });
+        });
+
+        const avgDurationMinutes = data.length > 0 ? totalDurationMinutes / data.length : 0;
+        const hours = Math.floor(avgDurationMinutes / 60);
+        const minutes = Math.round(avgDurationMinutes % 60);
+        document.getElementById('avgSessionDuration').textContent = `${hours}h ${minutes}m`;
+
+        const languageChartData = Object.entries(languageCounts).map(([lang, count]) => ({
+            label: lang,
+            value: (count / data.length) * 100
+        })).sort((a,b) => b.value - a.value);
+
+        this.renderStaticChart('languageDistributionChart', languageChartData, data.length);
+    },
+
+    renderComplianceMetrics(sessionData, beneficiaryData) {
+        if (sessionData.length === 0) {
+            document.getElementById('icContactedRate').textContent = 'N/A';
+            document.getElementById('audioRecordingCompliance').textContent = 'N/A';
+            document.getElementById('cnicPictureCaptureRate').textContent = 'N/A';
+            document.getElementById('icContactModeChart').innerHTML = '<div class="empty-state">No data</div>';
+            return;
+        }
+
+        const icContactedCount = sessionData.filter(s => s.IC_Contacted).length;
+        const icContactedRate = (icContactedCount / sessionData.length) * 100;
+        document.getElementById('icContactedRate').textContent = `${icContactedRate.toFixed(1)}%`;
+
+        const audioRecordedCount = sessionData.filter(s => s.Audio_Recorded).length;
+        const audioRecordingCompliance = (audioRecordedCount / sessionData.length) * 100;
+        document.getElementById('audioRecordingCompliance').textContent = `${audioRecordingCompliance.toFixed(1)}%`;
+
+        const cnicBothCount = beneficiaryData.filter(b => b.CNIC_Front_Pic && b.CNIC_Back_Pic).length;
+        const cnicCaptureRate = beneficiaryData.length > 0 ? (cnicBothCount / beneficiaryData.length) * 100 : 0;
+        document.getElementById('cnicPictureCaptureRate').textContent = `${cnicCaptureRate.toFixed(1)}%`;
+
+        const icContactedSessions = sessionData.filter(s => s.IC_Contacted);
+        const icContactModeCounts = {};
+        icContactedSessions.forEach(s => {
+            if (s.IC_Mode_of_Contact) {
+                icContactModeCounts[s.IC_Mode_of_Contact] = (icContactModeCounts[s.IC_Mode_of_Contact] || 0) + 1;
+            }
+        });
+        const icContactModeChartData = Object.entries(icContactModeCounts).map(([mode, count]) => ({
+            label: mode,
+            value: icContactedSessions.length > 0 ? (count / icContactedSessions.length) * 100 : 0
+        })).sort((a,b) => b.value - a.value);
+
+        this.renderStaticChart('icContactModeChart', icContactModeChartData, icContactedSessions.length);
+    },
+
+    renderTopicCoverage(data) {
+        const container = document.getElementById('topicCoverageTable');
+        if (data.length === 0) { container.innerHTML = '<div class="empty-state">No session data for current filters.</div>'; return; }
+        
+        let tbodyHTML = '';
+        this.TRAINING_TOPICS.forEach(topic => {
+            const coveredCount = data.filter(s => s.Topics_Covered.includes(topic)).length;
+            const coveragePercentage = data.length > 0 ? (coveredCount / data.length) * 100 : 0;
+            const color = (val) => val >= 90 ? 'var(--accent-success)' : val > 60 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+
+            tbodyHTML += `<tr>
+                                <td style="text-align: left; width: 60%; font-weight: 500;">${topic}</td>
+                                <td>
+                                    <div class="coverage-bar-full">
+                                        <div class="bar-container"><div class="bar-fill" style="width:${coveragePercentage.toFixed(0)}%; background-color:${color(coveragePercentage)};"></div></div>
+                                        <span>${coveragePercentage.toFixed(0)}%</span>
+                                    </div>
+                                </td>
+                            </tr>`;
+        });
+
+        container.innerHTML = `<table><thead><tr><th style="text-align: left; width: 60%;">Topic</th><th>Coverage Rate</th></tr></thead><tbody>${tbodyHTML}</tbody></table>`;
+    },
+
+    renderIssuesAndFeedback(data) {
+        const issueTypeCounts = { "IC Related": 0, "Beneficiary Related": 0, "Other Issues": 0 };
+        const issueDescriptions = [];
+
+        data.forEach(s => {
+            if (s.Issue_IC) { issueTypeCounts["IC Related"]++; }
+            if (s.Issue_Beneficiary) { issueTypeCounts["Beneficiary Related"]++; }
+            if (s.Issue_Other) { issueTypeCounts["Other Issues"]++; }
+            
+            if (s.Issue_Description && s.Issue_Description.trim() !== "") {
+                issueDescriptions.push({
+                    trainer: s.Trainer,
+                    sessionID: s.SessionID,
+                    description: s.Issue_Description
+                });
+            }
+        });
+
+        const totalIssues = Object.values(issueTypeCounts).reduce((sum, count) => sum + count, 0);
+        const issueChartData = Object.entries(issueTypeCounts).map(([type, count]) => ({
+            label: type,
+            value: totalIssues > 0 ? (count / totalIssues) * 100 : 0
+        })).sort((a,b) => b.value - a.value);
+
+        this.renderStaticChart('issueTypeChart', issueChartData, totalIssues);
+
+        const issueListContainer = document.getElementById('issueDescriptionList');
+        if (issueDescriptions.length === 0) {
+            issueListContainer.innerHTML = '<div class="empty-state">No specific issues described.</div>';
+        } else {
+            issueListContainer.innerHTML = `<ul style="margin:0; padding-left: 0;">${issueDescriptions.map(i => `<li><strong>${i.trainer} (${i.sessionID}):</strong> ${i.description}</li>`).join('')}</ul>`;
+        }
+    },
+
+    renderBeneficiaryDemographics(data) {
+        const chartContainer1 = document.getElementById('educationalLevelChart');
+        const chartContainer2 = document.getElementById('ageDistributionChart');
+
+        if (data.length === 0) {
+            chartContainer1.innerHTML = '<div class="empty-state">No beneficiary data.</div>';
+            chartContainer2.innerHTML = '<div class="empty-state">No beneficiary data.</div>';
+            return;
+        }
+        
+        // Educational Level Chart
+        const educationCounts = {};
+        data.forEach(b => {
+            if (b.Education) educationCounts[b.Education] = (educationCounts[b.Education] || 0) + 1;
+        });
+        const educationChartData = Object.entries(educationCounts).map(([level, count]) => ({
+            label: level,
+            value: (count / data.length) * 100
+        })).sort((a,b) => b.value - a.value);
+        this.renderStaticChart('educationalLevelChart', educationChartData, data.length);
+
+        // Age Distribution Chart
+        const ageBins = { "18-25": 0, "26-35": 0, "36-45": 0, "46-55": 0, "56+": 0 };
+        data.forEach(b => {
+            if (b.Age >= 18 && b.Age <= 25) ageBins["18-25"]++;
+            else if (b.Age >= 26 && b.Age <= 35) ageBins["26-35"]++;
+            else if (b.Age >= 36 && b.Age <= 45) ageBins["36-45"]++;
+            else if (b.Age >= 46 && b.Age <= 55) ageBins["46-55"]++;
+            else if (b.Age >= 56) ageBins["56+"]++;
+        });
+        const ageChartData = Object.entries(ageBins).map(([range, count]) => ({
+            label: range,
+            value: (count / data.length) * 100
+        })).sort((a,b) => parseInt(a.label.split('-')[0]) - parseInt(b.label.split('-')[0]));
+        this.renderStaticChart('ageDistributionChart', ageChartData, data.length);
+
+        this.updateBeneficiaryLocationTypeButtons();
+    },
+
+    renderBeneficiaryFinancialInsights(data) {
+        const renderBooleanChart = (elementId, property) => {
+            const container = document.getElementById(elementId);
+            if (data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No beneficiary data.</div>';
+                return;
+            }
+            const yesCount = data.filter(b => b[property]).length;
+            const chartData = [
+                { label: "Yes", value: (yesCount / data.length) * 100 },
+                { label: "No", value: ((data.length - yesCount) / data.length) * 100 }
+            ].sort((a, b) => b.value - a.value);
+            this.renderStaticChart(elementId, chartData, data.length);
+        };
+        
+        renderBooleanChart('mobileMoneyChart', 'Mobile_Money_Account');
+        renderBooleanChart('bankAccountChart', 'Bank_Account');
+        renderBooleanChart('loanTakenChart', 'Loan_Taken_6_Months');
+        renderBooleanChart('cellPhoneOwnershipChart', 'Cell_Phone');
+    },
+
+    // --- CHART RENDERING HELPER ---
+    renderStaticChart(elementId, chartData, totalItems) {
+        const container = document.getElementById(elementId);
+        if (totalItems === 0 || chartData.length === 0) {
+            container.innerHTML = '<div class="empty-state">No data for current filters.</div>';
+            return;
+        }
+
+        const displayChartData = chartData.filter(item => item.value > 0.05); // Filter out tiny slices
+        if (displayChartData.length === 0) {
+            container.innerHTML = '<div class="empty-state">No significant data to display.</div>';
+            return;
+        }
+
+        const createStaticBar = (item) => {
+            const color = item.value >= 80 ? 'var(--accent-success)' : item.value > 40 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+            return `<div class="static-bar-item" title="${item.label}: ${item.value.toFixed(1)}%"><div class="static-bar-label">${item.label}</div><div class="static-bar-wrapper"><div class="bar-fill static-bar-fill" style="width: ${item.value}%; background-color: ${color};"></div></div><div class="static-bar-value">${item.value.toFixed(0)}%</div></div>`;
+        };
+        container.innerHTML = displayChartData.map(createStaticBar).join('');
+    },
+    
+    // --- ACTIONS & HELPERS --- //
+    handleFilterChange(key, value) { 
+        this.filters[key] = value; 
+        if (key === 'province') { 
+            this.filters.trainer = 'All';
+            document.getElementById('trainerFilter').value = 'All';
+            this.populateTrainerFilter(); 
+        } 
+        this.updateDashboard(); 
+    },
+
+    handleBeneficiaryLocationTypeChange(type) {
+        this.filters.beneficiaryLocationType = type;
+        this.updateDashboard();
+    },
+
+    updateBeneficiaryLocationTypeButtons() {
+        document.querySelectorAll('.segment-switcher button').forEach(button => {
+            button.classList.toggle('active', button.dataset.segment === this.filters.beneficiaryLocationType);
+        });
+    },
+
+    clearFilters() { 
+        this.filters = { province: 'All', trainer: 'All', startDate: null, endDate: null, beneficiaryLocationType: 'All' }; 
+        document.getElementById('provinceFilter').value = 'All'; 
+        this.populateTrainerFilter(); 
+        document.getElementById('trainerFilter').value = 'All'; 
+        document.getElementById('startDateFilter').value = ''; 
+        document.getElementById('endDateFilter').value = ''; 
+        this.updateDashboard(); 
+    },
+
+    populateFilters() { 
+        const provFilter = document.getElementById('provinceFilter'); 
+        const uniqueProvinces = [...new Set(this.mockTrainingSessionData.map(d => d.Province))].sort(); 
+        provFilter.innerHTML = ['<option value="All">All Provinces</option>', ...uniqueProvinces.map(val => `<option value="${val}">${val}</option>`)].join(''); 
+        this.populateTrainerFilter(); 
+    },
+
+    populateTrainerFilter() { 
+        const trainerFilter = document.getElementById('trainerFilter'); 
+        const province = this.filters.province; 
+        const trainers = province === 'All' 
+            ? [...new Set(this.mockTrainingSessionData.map(d => d.Trainer))] 
+            : [...new Set(this.mockTrainingSessionData.filter(d => d.Province === province).map(d => d.Trainer))]; 
+        trainerFilter.innerHTML = ['<option value="All">All Trainers</option>', ...trainers.sort().map(val => `<option value="${val}">${val}</option>`)].join(''); 
+        
+        trainerFilter.value = this.filters.trainer; // Always set the value from state
+    },
+
+    updateTime() {
+        const now = new Date();
+        const timeOpts = { hour: '2-digit', minute: '2-digit', hour12: true };
+        const dateOpts = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', timeOpts);
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', dateOpts);
+    },
+};
+
+// Start the application when the DOM is ready
+document.addEventListener('DOMContentLoaded', () => DashboardApp.init());
+</script>
+</body>
+</html>

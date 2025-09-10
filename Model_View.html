@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Phase 2 - Interactive Data Model</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-color: #1a1d24;
+            --card-bg: #2a2f38;
+            --header-bg: #3c4352;
+            --text-color: #e1e3e6;
+            --text-muted: #9ba1a6;
+            --border-color: #4a5162;
+            --accent-color: #00aaff;
+            --accent-glow: rgba(0, 170, 255, 0.3);
+            --pk-bg: rgba(0, 170, 255, 0.1);
+            --fk-bg: rgba(148, 110, 255, 0.1);
+            --fk-color: #946eff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-content {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-weight: 700;
+            font-size: 2.5rem;
+            color: #fff;
+            letter-spacing: -1px;
+            margin: 0;
+        }
+        
+        h1 span {
+            color: var(--accent-color);
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-top: 0.5rem;
+        }
+
+        .model-container {
+            position: relative;
+            width: 1400px;
+            height: 850px;
+            border: 1px solid var(--border-color);
+            background: radial-gradient(circle, #252932, var(--bg-color));
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        .data-table {
+            position: absolute;
+            width: 280px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s ease-out forwards;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.4s ease;
+        }
+
+        .data-table.highlight {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 0 25px var(--accent-glow);
+            border-color: var(--accent-color);
+        }
+
+        .model-container.faded .data-table:not(.highlight) {
+            opacity: 0.2;
+        }
+
+        .table-header {
+            padding: 10px 15px;
+            font-weight: 600;
+            font-size: 1rem;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: grab;
+            background-color: var(--header-bg);
+        }
+
+        .table-body {
+            padding: 5px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .column {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #353a45;
+        }
+        .column:last-child {
+            border-bottom: none;
+        }
+
+        .icon {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            color: var(--text-muted);
+        }
+
+        .column-name {
+            flex-grow: 1;
+        }
+        
+        .key {
+            font-weight: 600;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            padding: 3px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+        .pk {
+            color: var(--accent-color);
+            background-color: var(--pk-bg);
+        }
+        .fk {
+            color: var(--fk-color);
+            background-color: var(--fk-bg);
+        }
+        
+        #trainings { top: 320px; left: 560px; animation-delay: 0s; }
+        #beneficiaries { top: 100px; left: 1000px; animation-delay: 0.1s; }
+        #attendance_logs { top: 500px; left: 1000px; animation-delay: 0.2s; }
+        #ic_reports { top: 50px; left: 150px; animation-delay: 0.3s; }
+        #qa_reports { top: 320px; left: 150px; animation-delay: 0.4s; }
+        #recording_reviews { top: 590px; left: 150px; animation-delay: 0.5s; }
+        
+        #trainings.highlight {
+            border-top: 3px solid var(--accent-color);
+        }
+        
+        .connector-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .connector-svg line {
+            stroke: #555c6e;
+            stroke-width: 2px;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawLine 1s ease-out forwards;
+            transition: stroke 0.3s ease, opacity 0.4s ease;
+        }
+        
+        .connector-svg .cardinality {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            fill: var(--text-muted);
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out 1s forwards;
+            transition: fill 0.3s ease, opacity 0.4s ease;
+        }
+
+        .connector-svg .line.highlight {
+            stroke: var(--accent-color);
+            stroke-width: 3px;
+        }
+        .connector-svg .cardinality.highlight {
+            fill: var(--accent-color);
+        }
+        
+        .model-container.faded .connector-svg .line:not(.highlight) {
+            opacity: 0.1;
+        }
+        .model-container.faded .connector-svg .cardinality:not(.highlight) {
+            opacity: 0.1;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes drawLine {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <symbol id="icon-key" viewBox="0 0 24 24"><path fill="currentColor" d="M16.75 2.5a5.25 5.25 0 0 0-5.25 5.25A5.25 5.25 0 0 0 16.75 13a5.25 5.25 0 0 0 5.25-5.25A5.25 5.25 0 0 0 16.75 2.5zm0 1.5a3.75 3.75 0 0 1 3.75 3.75a3.75 3.75 0 0 1-3.75 3.75a3.75 3.75 0 0 1-3.75-3.75A3.75 3.75 0 0 1 16.75 4zM8.5 11l-6 6l2 2l6-6v-3H8.5zm2.5-1.5l-1 1V12h1.5v-2.5z"/></symbol>
+            <symbol id="icon-link" viewBox="0 0 24 24"><path fill="currentColor" d="M13.593 10.732a3.13 3.13 0 0 1 0 4.428l-2.475 2.474a3.13 3.13 0 1 1-4.428-4.428l.89-.89a.75.75 0 0 1 1.06 1.06l-.89.89a1.63 1.63 0 1 0 2.304 2.304l2.475-2.474a1.63 1.63 0 0 0 0-2.304l-1.018-1.018a.75.75 0 1 1 1.06-1.06zM9.347 14.328a.75.75 0 0 1-1.06-1.06l3.535-3.536a.75.75 0 1 1 1.06 1.06zm.93-5.488a3.13 3.13 0 0 1 4.428 0l2.474 2.475a3.13 3.13 0 1 1-4.428 4.428l-.889-.89a.75.75 0 1 1 1.06-1.06l.89.89a1.63 1.63 0 1 0 2.304-2.304l-2.475-2.474a1.63 1.63 0 0 0-2.304 0l-1.018 1.018a.75.75 0 1 1-1.06-1.06z"/></symbol>
+            <symbol id="icon-user" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5a5.5 5.5 0 0 1 5.5 5.5v.424a6.933 6.933 0 0 1 1.996 4.326A5.25 5.25 0 0 1 14.25 22H9.75a5.25 5.25 0 0 1-5.246-4.75A6.933 6.933 0 0 1 6.5 12.25v-.424A5.5 5.5 0 0 1 12 2.5z"/></symbol>
+            <symbol id="icon-date" viewBox="0 0 24 24"><path fill="currentColor" d="M4.75 3A1.75 1.75 0 0 0 3 4.75v14.5A1.75 1.75 0 0 0 4.75 21h14.5A1.75 1.75 0 0 0 21 19.25V4.75A1.75 1.75 0 0 0 19.25 3zM8.5 7.75a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 0 1.5H9.25a.75.75 0 0 1-.75-.75m0 4a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 0 1.5H9.25a.75.75 0 0 1-.75-.75m.75 3.25a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5z"/></symbol>
+            <symbol id="icon-number" viewBox="0 0 24 24"><path fill="currentColor" d="M9.25 2.5h-1.5L4.5 9.25V11h3.5v-.875L9.25 2.5zM19.5 13l-3.25 6.75H14.75L18 13zM6.25 13H4v1.5h2.25zM12.5 11V4.25H11V11zM11 18.5h1.5V20H11zM8.5 13H17v1.5H8.5zM7.5 4.25v-1.5H6v1.5zM18 18.5h1.5v1.5H18z"/></symbol>
+            <symbol id="icon-mic" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a4 4 0 0 0-4 4v8a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4m-6.5 8.5v.5a6.5 6.5 0 0 0 13 0v-.5h-1.5v.5a5 5 0 0 1-10 0v-.5z"/></symbol>
+            <symbol id="icon-pin" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7m0 9.5a2.5 2.5 0 0 1 0-5a2.5 2.5 0 0 1 0 5"/></symbol>
+            <symbol id="icon-check" viewBox="0 0 24 24"><path fill="currentColor" d="m10 16.4l-4-4L7.4 11l2.6 2.6L16.6 7L18 8.4z"/></symbol>
+            <symbol id="icon-card" viewBox="0 0 24 24"><path fill="currentColor" d="M2.75 3A1.75 1.75 0 0 0 1 4.75v14.5A1.75 1.75 0 0 0 2.75 21h18.5A1.75 1.75 0 0 0 23 19.25V4.75A1.75 1.75 0 0 0 21.25 3zM2.5 7h19v12.25a.25.25 0 0 1-.25.25H2.75a.25.25 0 0 1-.25-.25zM18 15.5a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1 0-1.5h10.5a.75.75 0 0 1 .75.75"/></symbol>
+            <symbol id="icon-rating" viewBox="0 0 24 24"><path fill="currentColor" d="m12 17.27l-4.15 2.51l1.09-4.79l-3.79-3.28l4.88-.42L12 7l1.97 4.29l4.88.42l-3.79 3.28l1.09 4.79z"/></symbol>
+            <symbol id="icon-notes" viewBox="0 0 24 24"><path fill="currentColor" d="M4.994 3A2 2 0 0 0 3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM8.5 7.75a.75.75 0 0 1 .75-.75h5.5a.75.75 0 0 1 0 1.5H9.25a.75.75 0 0 1-.75-.75m.75 3.25a.75.75 0 0 0 0 1.5h5.5a.75.75 0 0 0 0-1.5z"/></symbol>
+            <symbol id="icon-idea" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2A7 7 0 0 0 5 9c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74A7 7 0 0 0 12 2m-1 19v1a1 1 0 0 0 1 1h.01a1 1 0 0 0 1-1v-1z"/></symbol>
+        </defs>
+    </svg>
+
+    <div class="header-content">
+        <h1>DFLT Phase 2 <span>Interactive Data Model</span></h1>
+        <p class="subtitle">This visualization shows the relationships between data tables. Hover over any table to highlight its connections and see how data flows through the system.</p>
+    </div>
+
+    <div class="model-container" id="model-container">
+        <svg class="connector-svg">
+            <g class="connector" data-source="trainings" data-target="beneficiaries" style="animation-delay: 0.6s;">
+                <line class="line" x1="840" y1="360" x2="1000" y2="180"></line>
+                <text class="cardinality" x="845" y="355">1</text><text class="cardinality" x="985" y="185">*</text>
+            </g>
+            <g class="connector" data-source="trainings" data-target="ic_reports" style="animation-delay: 0.7s;">
+                <line class="line" x1="560" y1="350" x2="430" y2="120"></line>
+                <text class="cardinality" x="545" y="345">1</text><text class="cardinality" x="435" y="125">1</text>
+            </g>
+            <g class="connector" data-source="trainings" data-target="qa_reports" style="animation-delay: 0.8s;">
+                <line class="line" x1="560" y1="380" x2="430" y2="380"></line>
+                <text class="cardinality" x="545" y="380">1</text><text class="cardinality" x="435" y="380">1</text>
+            </g>
+            <g class="connector" data-source="trainings" data-target="recording_reviews" style="animation-delay: 0.9s;">
+                <line class="line" x1="560" y1="410" x2="430" y2="660"></line>
+                <text class="cardinality" x="545" y="415">1</text><text class="cardinality" x="435" y="655">1</text>
+            </g>
+            <g class="connector" data-source="trainings" data-target="attendance_logs" style="animation-delay: 1.0s;">
+                <line class="line" x1="840" y1="400" x2="1000" y2="580"></line>
+                <text class="cardinality" x="845" y="405">1</text><text class="cardinality" x="985" y="575">*</text>
+            </g>
+            <g class="connector" data-source="beneficiaries" data-target="attendance_logs" style="animation-delay: 1.1s;">
+                <line class="line" x1="1140" y1="268" x2="1140" y2="500"></line>
+                <text class="cardinality" x="1145" y="283">1</text><text class="cardinality" x="1145" y="495">*</text>
+            </g>
+        </svg>
+
+        <div id="trainings" class="data-table" data-table-id="trainings">
+            <div class="table-header">Trainings (Central Hub)</div>
+            <div class="table-body">
+                <div class="column"><svg class="icon"><use href="#icon-key"></use></svg><span class="column-name">training_session_id</span><span class="key pk">PK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-user"></use></svg><span class="column-name">trainer_name</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-date"></use></svg><span class="column-name">training_date</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-number"></use></svg><span class="column-name">beneficiaries_count</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-mic"></use></svg><span class="column-name">audio_recording_url</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-pin"></use></svg><span class="column-name">training_location</span></div>
+            </div>
+        </div>
+
+        <div id="beneficiaries" class="data-table" data-table-id="beneficiaries">
+            <div class="table-header">Beneficiaries</div>
+            <div class="table-body">
+                <div class="column"><svg class="icon"><use href="#icon-key"></use></svg><span class="column-name">beneficiary_id</span><span class="key pk">PK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-link"></use></svg><span class="column-name">training_session_id</span><span class="key fk">FK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-card"></use></svg><span class="column-name">cnic_number</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-user"></use></svg><span class="column-name">full_name</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-notes"></use></svg><span class="column-name">educational_level</span></div>
+            </div>
+        </div>
+
+        <div id="attendance_logs" class="data-table" data-table-id="attendance_logs">
+            <div class="table-header">Attendance_Logs</div>
+            <div class="table-body">
+                <div class="column"><svg class="icon"><use href="#icon-key"></use></svg><span class="column-name">attendance_log_id</span><span class="key pk">PK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-link"></use></svg><span class="column-name">training_session_id</span><span class="key fk">FK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-link"></use></svg><span class="column-name">beneficiary_cnic</span><span class="key fk">FK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-check"></use></svg><span class="column-name">attendance_status</span></div>
+            </div>
+        </div>
+        
+        <div id="ic_reports" class="data-table" data-table-id="ic_reports">
+            <div class="table-header">IC_Reports</div>
+            <div class="table-body">
+                <div class="column"><svg class="icon"><use href="#icon-key"></use></svg><span class="column-name">ic_report_id</span><span class="key pk">PK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-link"></use></svg><span class="column-name">training_session_id</span><span class="key fk">FK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-user"></use></svg><span class="column-name">ic_name</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-rating"></use></svg><span class="column-name">trainer_performance_rating</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-pin"></use></svg><span class="column-name">ic_location</span></div>
+            </div>
+        </div>
+        
+        <div id="qa_reports" class="data-table" data-table-id="qa_reports">
+            <div class="table-header">QA_Reports</div>
+            <div class="table-body">
+                <div class="column"><svg class="icon"><use href="#icon-key"></use></svg><span class="column-name">qa_report_id</span><span class="key pk">PK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-link"></use></svg><span class="column-name">training_session_id</span><span class="key fk">FK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-user"></use></svg><span class="column-name">observer_name</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-notes"></use></svg><span class="column-name">observations_notes</span></div>
+            </div>
+        </div>
+        
+        <div id="recording_reviews" class="data-table" data-table-id="recording_reviews">
+            <div class="table-header">Recording_Reviews</div>
+             <div class="table-body">
+                <div class="column"><svg class="icon"><use href="#icon-key"></use></svg><span class="column-name">review_id</span><span class="key pk">PK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-link"></use></svg><span class="column-name">training_session_id</span><span class="key fk">FK</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-user"></use></svg><span class="column-name">reviewer_name</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-rating"></use></svg><span class="column-name">overall_quality_rating</span></div>
+                <div class="column"><svg class="icon"><use href="#icon-idea"></use></svg><span class="column-name">recommendations</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('model-container');
+            const tables = document.querySelectorAll('.data-table');
+            const connectors = document.querySelectorAll('.connector');
+
+            tables.forEach(table => {
+                table.addEventListener('mouseover', () => {
+                    const tableId = table.dataset.tableId;
+                    container.classList.add('faded');
+
+                    // Highlight the hovered table
+                    table.classList.add('highlight');
+
+                    // Highlight related connectors and tables
+                    connectors.forEach(conn => {
+                        const source = conn.dataset.source;
+                        const target = conn.dataset.target;
+
+                        if (source === tableId || target === tableId) {
+                            conn.querySelector('.line').classList.add('highlight');
+                            conn.querySelectorAll('.cardinality').forEach(c => c.classList.add('highlight'));
+                            
+                            // Highlight the other table in the connection
+                            const otherTableId = source === tableId ? target : source;
+                            document.querySelector(`[data-table-id="${otherTableId}"]`).classList.add('highlight');
+                        }
+                    });
+                });
+
+                table.addEventListener('mouseout', () => {
+                    container.classList.remove('faded');
+                    tables.forEach(t => t.classList.remove('highlight'));
+                    connectors.forEach(conn => {
+                        conn.querySelector('.line').classList.remove('highlight');
+                        conn.querySelectorAll('.cardinality').forEach(c => c.classList.remove('highlight'));
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

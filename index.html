@@ -685,7 +685,7 @@
                 </div>
                 <div class="card">
                      <div class="flex-grow">
-                        <h3 class="text-sm font-medium text-gray-600">Top Province</h3>
+                        <h3 class="text-sm font-medium text-gray-600">Top District</h3>
                         <p id="topProvinceName" class="text-2xl font-black text-blue-600 mt-1">N/A</p>
                         <p id="topProvincePct" class="text-md font-bold text-blue-500 mt-0">0% Target</p>
                     </div>
@@ -696,7 +696,7 @@
             </div>
             <div class="card provincial-summary-card">
                 <div class="flex items-center justify-between flex-shrink-0 mb-4">
-                    <h3 id="provincialSummaryTitle" class="text-md font-bold text-gray-800">Provincial Performance Overview</h3>
+                    <h3 id="provincialSummaryTitle" class="text-md font-bold text-gray-800">Sindh Performance Overview</h3>
                     <div class="flex items-center gap-2">
                         <label for="provincialCardFilter" class="text-xs font-medium text-gray-600">Filter:</label>
                         <select id="provincialCardFilter" class="block py-1 px-2 border border-gray-300 bg-gray-50 text-gray-900 rounded-md shadow-sm"></select>
@@ -722,7 +722,7 @@
                     <button class="chart-filter-button active" data-sort-metric="beneficiaries">By Mamta Beneficiaries</button>
                     <button class="chart-filter-button" data-sort-metric="trainings">By Trainings</button>
                     <button class="chart-filter-button" data-sort-metric="target_achievement">By Target %</button>
-                    <button class="chart-filter-button" data-sort-metric="district">By Tehsil</button>
+                    <button class="chart-filter-button" data-sort-metric="district">By District</button>
                 </div>
                 <div class="table-container mt-2">
                     <table id="rankingTable" class="w-full text-left text-sm">
@@ -1211,9 +1211,13 @@
             beneficiariesDonutChart = renderDonutChart(beneficiariesDonutChart, 'beneficiariesDonutChart', beneficiaryPct, '#4f46e5');
             trainingsDonutChart = renderDonutChart(trainingsDonutChart, 'trainingsDonutChart', trainingPct, '#10b981');
 
-            const topProvince = [...provincialRankingsData].sort((a,b) => b.beneficiary_target_pct - a.beneficiary_target_pct)[0];
-            document.getElementById('topProvinceName').textContent = topProvince?.province || 'N/A';
-            document.getElementById('topProvincePct').textContent = `${(topProvince?.beneficiary_target_pct || 0).toFixed(1)}% Target`;
+            const topDistrict = Object.entries(districtDataSummary).map(([name, stats]) => ({
+                name,
+                ...stats,
+            target_pct: (stats.beneficiaries / (stats.trainings * 30)) * 100 // Example: 30 beneficiaries per training
+            })).sort((a, b) => b.beneficiaries - a.beneficiaries)[0];
+            document.getElementById('topProvinceName').textContent = topDistrict?.name || 'N/A';
+            document.getElementById('topProvincePct').textContent = `${(topDistrict?.target_pct || 0).toFixed(1)}% Target`;
         }
         
         function updateMapAndHeatmap() {
@@ -1522,6 +1526,7 @@
     </script>
 </body>
 </html>
+
 
 
 

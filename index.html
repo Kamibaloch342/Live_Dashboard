@@ -763,10 +763,7 @@
 
         let globalTargets = {
             provinces: {
-                "Punjab": {target_beneficiaries: 105000, target_trainings: 3500},
-                "Sindh": {target_beneficiaries: 60000, target_trainings: 2000},
-                "Khyber Pakhtunkhwa": {target_beneficiaries: 65000, target_trainings: 2167},
-                "Balochistan": {target_beneficiaries: 20000, target_trainings: 667}
+                "Sindh": {target_beneficiaries: 2500000, target_trainings: 8640},
             }
         };
         
@@ -1075,7 +1072,7 @@
             };
 
             createOptions(provinceFilter, uniqueProvinces, 'All Provinces');
-            createOptions(provincialCardFilter, uniqueProvinces, 'All of Pakistan');
+            createOptions(provincialCardFilter, uniqueProvinces, 'All of Sindh');
             createOptions(districtFilter, uniqueDistricts, 'All Districts');
         }
 
@@ -1267,7 +1264,7 @@
             let data;
             
             if (selectedProvinceName === 'All') {
-                titleEl.textContent = 'Performance Overview of Pakistan';
+                titleEl.textContent = 'Performance Overview of Sindh';
                 data = Object.values(provinceDataSummary).reduce((acc, summary) => {
                     acc.trainings += summary.trainings;
                     acc.beneficiaries += summary.beneficiaries;
@@ -1525,4 +1522,5 @@
     </script>
 </body>
 </html>
+
 

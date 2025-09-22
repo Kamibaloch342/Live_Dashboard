@@ -19,11 +19,7 @@
             --text-muted: #6B7280;
             --accent-color: #4F46E5;
             --success-color: #22C55E;
-            --success-dark-color: #15803d;
-            --warning-color: #F59E0B;
-            --warning-light-color: #FFFBEB;
             --sidebar-bg: rgba(255, 255, 255, 0.55);
-            --tooltip-bg: rgba(255, 255, 255, 0.85);
             --item-bg: rgba(255, 255, 255, 0.3);
             --item-hover-bg: rgba(255, 255, 255, 0.7);
             --border-color: rgba(229, 231, 235, 1);
@@ -37,11 +33,7 @@
             --text-muted: #9CA3AF;
             --accent-color: #6366F1;
             --success-color: #4ADE80;
-            --success-dark-color: #22c55e;
-            --warning-color: #FBBF24;
-            --warning-light-color: #4A3A18;
             --sidebar-bg: rgba(29, 41, 59, 0.5);
-            --tooltip-bg: rgba(29, 41, 59, 0.8);
             --item-bg: rgba(55, 65, 81, 0.4);
             --item-hover-bg: rgba(55, 65, 81, 0.8);
             --border-color: rgba(255, 255, 255, 0.08);
@@ -67,8 +59,7 @@
         .dark-mode .leaflet-tile-pane { filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7); }
 
         #sidebar {
-            position: fixed; /* Changed from absolute */
-            top: 20px; left: 20px; bottom: 20px; width: 380px; z-index: 1001;
+            position: fixed; top: 20px; left: 20px; bottom: 20px; width: 380px; z-index: 1001;
             background: var(--sidebar-bg); backdrop-filter: blur(var(--blur-intensity)); -webkit-backdrop-filter: blur(var(--blur-intensity));
             border: 1px solid var(--border-color); border-radius: 24px; box-shadow: 0 8px 32px 0 var(--shadow-color);
             padding: 25px; display: flex; flex-direction: column; transition: all 0.3s ease;
@@ -132,16 +123,19 @@
         .deployment-stats { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; text-align: center; }
         .stat-value { font-weight: 800; font-size: 18px; }
         .stat-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); }
+        .stat-value-small { font-size: 14px; font-weight: 600; color: var(--text-color); }
+        .district-item.active .stat-value-small { color: rgba(255,255,255,0.85); }
+
 
         .progress-bar { width: 100%; height: 12px; background-color: var(--border-color); border-radius: 6px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background-color: var(--success-color); border-radius: 6px; transition: width 0.8s ease-out; }
+        .progress-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease-out; }
 
         .custom-popup .leaflet-popup-content-wrapper {
-            background: var(--tooltip-bg); backdrop-filter: blur(var(--blur-intensity)); color: var(--text-color);
+            background: var(--sidebar-bg); backdrop-filter: blur(var(--blur-intensity)); color: var(--text-color);
             border: 1px solid var(--border-color); box-shadow: 0 8px 32px 0 var(--shadow-color); border-radius: 16px; padding: 0; width: 320px;
         }
         .custom-popup .leaflet-popup-content { font-family: var(--font-family); margin: 0; animation: fade-in-scale 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
-        .custom-popup .leaflet-popup-tip { background: var(--tooltip-bg); }
+        .custom-popup .leaflet-popup-tip { background: var(--sidebar-bg); }
         .tooltip-header { padding: 15px 20px; border-bottom: 1px solid var(--border-color); }
         .tooltip-header .district { font-size: 13px; color: var(--text-muted); font-weight: 500; }
         .tooltip-header .name { font-size: 22px; font-weight: 800; margin: 2px 0 0 0; }
@@ -156,50 +150,25 @@
         
         .trainer-entry { font-size: 14px; margin-bottom: 8px; padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.03); border-left: 4px solid var(--text-muted); }
         .dark-mode .trainer-entry { background: rgba(255,255,255,0.06); }
-        .trainer-name { font-weight: 700; display: block; margin-bottom: 8px; }
-        .trainer-details { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; }
-        .trainer-details i { color: var(--text-muted); width: 14px; text-align: center; }
+        .trainer-name { font-weight: 700; display: block; margin-bottom: 4px; }
+        .trainer-details { font-size: 12px; color: var(--text-muted); }
+        .trainer-details i { margin-right: 6px; }
 
-        /* Marker Styling */
-        .leaflet-marker-icon { text-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.2s ease-in-out; position: relative; }
+        .leaflet-marker-icon { text-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.2s ease-in-out; }
         .leaflet-marker-icon:hover { transform: scale(1.2); }
-        .district-marker .fa-map-marker-alt { font-size: 45px; }
-        .tehsil-marker .fa-location-dot { font-size: 28px; }
-        .live-location-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-radius: 50%; background-color: var(--marker-color); animation: pulse-circle-animation 2s infinite ease-out; opacity: 0; z-index: -1; }
-        .district-marker.active-glow .fa-map-marker-alt { animation: pulse-glow 1.5s infinite alternate; }
 
-        /* Logo Control on Map */
         .sspa-logo-container {
-            position: fixed; /* Changed from absolute */
-            top: 20px;
-            right: 20px;
-            z-index: 1001; /* Added to ensure it's above map elements */
-            background: var(--sidebar-bg);
-            padding: 5px;
-            border-radius: 8px;
-            box-shadow: 0 1px 5px var(--shadow-color);
-            backdrop-filter: blur(var(--blur-intensity));
-             -webkit-backdrop-filter: blur(var(--blur-intensity));
+            position: fixed; top: 20px; right: 20px; z-index: 1001;
+            background: var(--sidebar-bg); padding: 5px; border-radius: 8px;
+            box-shadow: 0 1px 5px var(--shadow-color); backdrop-filter: blur(var(--blur-intensity)); -webkit-backdrop-filter: blur(var(--blur-intensity));
         }
-        .sspa-logo-container img {
-            width: 200px;
-            height: auto;
-            display: block;
-        }
+        .sspa-logo-container img { width: 200px; height: auto; display: block; }
+        
+        /* Adjust Leaflet Controls to avoid overlap with fixed elements */
+        .leaflet-top.leaflet-right { right: 240px; }
+        .leaflet-bottom.leaflet-left { left: 420px; }
 
-        /* Adjusted Leaflet Controls to avoid overlap with fixed elements */
-        .leaflet-control-container .leaflet-top.leaflet-right {
-            top: 20px; /* Adjust top to accommodate the logo control */
-            right: 230px; /* Adjust right to prevent overlap with logo */
-        }
-        .leaflet-control-container .leaflet-bottom.leaflet-right {
-            bottom: 20px;
-            right: 20px;
-        }
-
-        @keyframes pulse-glow { from { filter: drop-shadow(0 0 5px var(--marker-color)); transform: scale(1.0); } to { filter: drop-shadow(0 0 20px var(--marker-color)) drop-shadow(0 0 30px var(--marker-color)); transform: scale(1.15); } }
         @keyframes text-pulse { from { color: white; text-shadow: none; } to { color: white; text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6); } }
-        @keyframes pulse-circle-animation { from { width: 0; height: 0; opacity: 0.7; } to { width: 100px; height: 100px; opacity: 0; } }
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes fade-in-up { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -213,7 +182,7 @@
             <div class="sidebar-header">
                 <div>
                     <h1>DFLT-2 | SSPA Districts</h1>
-                    <p class="subtitle" id="sidebar-subtitle">Developed by Center of Adaptive Social Protection & Economic Empowerment - SDPI</p>
+                    <p class="subtitle" id="sidebar-subtitle">Developed by SDPI</p>
                 </div>
                 <button id="theme-toggle" title="Toggle Dark Mode"><i class="fa-solid fa-moon"></i></button>
             </div>
@@ -241,156 +210,256 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async function () {
+        document.addEventListener('DOMContentLoaded', function () {
             
-            // --- HARDCODED DATA SOURCE ---
-            // NOTE: Data is hardcoded as browsers cannot access local file paths for security reasons.
-            const CSV_DATA = `District,Tehsil,Rural / Urban,Total Head_Count,Name,Phone Number,Status with BISP,Considered Headcount,Formula_Consideration,Trainers Needed,Selected,Comment
-Badin,Badin,Urban,"21,213",Ruqayya,3312193086,SUPERVISOR,10607,,36,1,4 Pairs Vacant
-Badin,Badin,Urban,"21,213",Fazila,3336471698,USHER,,,,1,
-Badin,Golarchi,Rural,"11,960",Jaivanti Parmar,3442397334,SUPERVISOR,,,,1,
-Badin,Golarchi,Rural,"11,960",Amber,3470136108,USHER,6300,,,1,
-Badin,Matli,Rural,"14,231",Azra,3063540655,CRM,8400,,,1,3 Pairs Vacant
-Badin,Matli,Rural,"14,231",Saima,3113859151,CRM,,,,1,
-Badin,Talhar,Rural,"10,330",Kanwal,3413709654,ASPC,6300,24.09,,1,
-Badin,Talhar,Rural,"10,330",Madiha,3442383504/3453535971,CRM,,,,1,
-Badin,Tando Bago,Rural,"13,803",Bushra,3310281733,ASPC,,60.28,,1,
-Badin,Tando Bago,Rural,"13,803",Zakia,3073251824/3332525288,CRM,6300,,,1,3 Trainers Vacant
-Badin,Tando Bago,Rural,"13,803",Sadia,3432391291,USHER,,,,1,
-Ghotki,Daharki,Rural,"7,311",Musarat Bhutto,3183438942,ASPC,,65.3,2,,
-Ghotki,Mirpur Mathelo,Urban,"21,335",Mehnaz,3013250345,ASPC,,60.3,,1,
-Ghotki,Mirpur Mathelo,Urban,"21,335",Asia Alas Papi,3268933265,CRM,2100,,,1,
-Jacobabad,Garhi Khairo,Rural,"8,386",Surya Begam,3334477318,ASPC,,56.01,5,1,
-Jacobabad,Garhi Khairo,Rural,"8,386",Nasreen,3362858165,CRM,2100,,,1,
-Jacobabad,Jacobabad,Urban,"18,145",Shenaz,3173305697,ASPC,1050,53.89,,1,
-Jacobabad,Thul,Rural,"26,393",Ambreen,3138117685,CRM,2100,,,1,
-Jacobabad,Thul,Rural,"26,393",Asma Sarki,3033992194,CRM,,,,1,
-Kambar Shahdadkot,Kambar Ali Khan,Urban,"16,071",Najima Solangi,3243752579,ASPC,1050,54.73,13,1,
-Kambar Shahdadkot,Miro Khan,Rural,"6,986",Ghulaam Kaneez,3063749722,CRM,,,,1,
-Kambar Shahdadkot,Miro Khan,Rural,"6,986",Nijhana Parveen,3029787618,CRM,2100,,,1,
-Kambar Shahdadkot,Nasirabad,Rural,"7,336",Iram Tunio,3102756743,ASPC,,57.84,,1,
-Kambar Shahdadkot,Nasirabad,Rural,"7,336",Noor Un Nisa,3273421840,CRM,,,,1,
-Kambar Shahdadkot,Nasirabad,Rural,"7,336",Zoya Qurban,3272233825,CRM,3150,,,1,
-Kambar Shahdadkot,Qubo Saeed Khan,Rural,261,Parveen Magsi,3342557534,ASPC,,No documentation provided,,1,
-Kambar Shahdadkot,Qubo Saeed Khan,Rural,261,Noor Jahan,3342863871,CRM,2100,,,1,
-Kambar Shahdadkot,Shahdadkot,Urban,"4,909",Rehana Chandio,3302937448,CRM,2100,,,1,
-Kambar Shahdadkot,Shahdadkot,Urban,"4,909",Sidra Nizam,3323078753,CRM,,,,1,
-Kambar Shahdadkot,Sujawal Junejo,Rural,"6,530",Mala,3161324935,CRM,2100,,,1,
-Kambar Shahdadkot,Sujawal Junejo,Rural,"6,530",Saima,3134654484,CRM,,,,1,
-Kambar Shahdadkot,Warah,Rural,"10,789",Zumra Rehman,3426481799,ASPC,1050,No documentation provided,,1,
-Kashmore,Kandhkot,Urban,"12,555",Saira Ameer,3337304731,CRM,,,2,,
-Kashmore,Kashmore,Urban,"20,229",Maryam Bano,3337363182,ASPC,,Error: Bachelor without FSc,,1,
-Kashmore,Kashmore,Urban,"20,229",Ghulam Qubra,3354139964,CRM,2100,,,1,
-Matiari,Hala,Rural,"9,540",Aqeela Memon,3351288252,ASPC,,Error: Bachelor without FSc,5,1,
-Matiari,Hala,Rural,"9,540",Samreen N/A,3133643010,CRM,2100,,,1,
-Matiari,Matiari,Urban,"12,149",Tahmeena,3083360771,ASPC,1050,54.17,,1,
-Matiari,Saeedabad,Rural,"7,528",Raheela Jamali,3023206099,ASPC,,38.4,,1,
-Matiari,Saeedabad,Rural,"7,528",Shahida Keerio,3053970475,CRM,2100,,,1,
-Mirpur Khas,Digri,Rural,"7,628",Musarat Taj,3083528430,ASPC,,57.86,24,1,
-Mirpur Khas,Digri,Rural,"7,628",Sadaf,3013286800,SUPERVISOR,3150,,,1,
-Mirpur Khas,Hussain Bux Mari,Rural,"8,436",Khalida,3208340500,CRM,,,,1,
-Mirpur Khas,Hussain Bux Mari,Rural,"8,436",Murk Muhammad Rafiq,3233445133,SUPERVISOR,2100,,,1,
-Mirpur Khas,Jhudo,Rural,"9,122",Taskeen,3082416266,ASPC,,35.73,,1,
-Mirpur Khas,Jhudo,Rural,"9,122",Saba Talpur,3313919704,CRM,,,,1,
-Mirpur Khas,Jhudo,Rural,"9,122",Sultana,3456163148,CRM,4200,,,1,
-Mirpur Khas,Kot Ghulam Muhammad,Rural,"10,133",Aneesa,3013857744,CRM,4200,,,1,
-Mirpur Khas,Kot Ghulam Muhammad,Rural,"10,133",Ganga,3452382735,CRM,,,,1,
-Mirpur Khas,Mirpur Khas,Urban,"5,518",Haneefa Soomro,3362236886,ASPC,,34.57,,1,
-Mirpur Khas,Mirpur Khas,Urban,"5,518",Noor Jahan,3472363649,CRM,3150,,,1,
-Mirpur Khas,Mirpur Khas,Urban,"5,518",Tehmina,3103862906,CRM,,,,1,
-Mirpur Khas,Shujaabad,Rural,"8,524",Areeba,3110366929,CRM,,,,1,
-Mirpur Khas,Shujaabad,Rural,"8,524",Bibo,3063318263,CRM,,,,1,
-Mirpur Khas,Shujaabad,Rural,"8,524",Nimra Bibi,3040159414,CRM,,,,1,
-Mirpur Khas,Shujaabad,Rural,"8,524",Sadia Qasim,3246351539,CRM,4200,,,1,
-Mirpur Khas,Sindhri,Rural,"12,047",Hifsa,3181397662,CRM,4200,,,1,
-Mirpur Khas,Sindhri,Rural,"12,047",Keenjhar,3121334981,CRM,,,,1,
-Sanghar,Jam Nawaz Ali,Rural,"8,045",Afroz,3063904408,CRM,4200,,40,1,
-Sanghar,Jam Nawaz Ali,Rural,"8,045",Ishrat,3002044877,CRM,,,,1,
-Sanghar,Khipro,Rural,"14,052",Nida Mohsin,3245052149,ASPC,8400,No documentation provided,,1,
-Sanghar,Khipro,Rural,"14,052",Maryam,3004107395,CRM,,,,1,
-Sanghar,Sanghar,Urban,"17,002",Shabana Khaskhali,3327956273,CRM,8400,,,1,
-Sanghar,Sanghar,Urban,"17,002",Shazma Shahid Ali,3262709750,CRM,,,,1,
-Sanghar,Shahdadpur,Urban,"13,152",Shehrish Arain,3173192907,CRM,6400,,,1,
-Sanghar,Shahdadpur,Urban,"13,152",Zainab,3142651344,CRM,,,,1,
-Sanghar,Sinjhoro,Rural,"14,786",Shazia Laghari,3265132667,ASPC,8400,No documentation provided,,1,
-Sanghar,Tando Adam,Urban,"10,194",Muzamil,3113253547,ASPC,6400,58.41,,1,
-Sanghar,Tando Adam,Urban,"10,194",Parvish,3013553965,CRM,,,,1,
-Shikarpur,Garhi Yasin,Rural,"3,895",Asma,3103450131,CRM,,,2,,
-Shikarpur,Shikarpur,Urban,"8,424",Nadiya,3072772488,ASPC,,55.01,,1,
-Shikarpur,Shikarpur,Urban,"8,424",Adeela Shah,3363373360,SUPERVISOR,2100,,,1,
-Sujawal,Jati,Rural,"6,368",Ruksar,3417119804,ASPC,4200,No documentation provided,17,1,
-Sujawal,Jati,Rural,"6,368",Khalida,3113818821,SUPERVISOR,,,,1,
-Sujawal,Mirpur Bathoro,Rural,"7,803",Aiman,3123756000,ASPC,,No documentation provided,,1,
-Sujawal,Mirpur Bathoro,Rural,"7,803",Shaheen,3063485108,CRM,4200,,,1,
-Sujawal,Shah Bunder,Rural,"3,777",Ayesha Ummrani,0320-3645928,ASPC,,Error: Master without Bachelor,,1,
-Sujawal,Shah Bunder,Rural,"3,777",Shaista,3100304134,SUPERVISOR,3150,,,1,
-Sujawal,Shah Bunder,Rural,"3,777",Amna Parveen,3173608578,USHER,,,,1,
-Sujawal,Sujawal,Urban,"8,238",Saima,3134654484,ASPC,,No documentation provided,,1,
-Sujawal,Sujawal,Urban,"8,238",Mala,3161324935,CRM,6300,,,1,
-Tando Allah Yar,Chamber,Rural,"11,593",Ameena Jalbani,3443696459,CRM,,,7,1,
-Tando Allah Yar,Chamber,Rural,"11,593",Nabeela Kanwal,3073127691,CRM,2100,,,1,
-Tando Allah Yar,Jhando Mari,Rural,"11,432",Benazir N/A,3312091846,ASPC,,No documentation provided,,1,
-Tando Allah Yar,Jhando Mari,Rural,"11,432",Rukhsana,3013285945,ASPC,,Error: FSc without Matric,,1,
-Tando Allah Yar,Jhando Mari,Rural,"11,432",Shahneela Dilshaad Ali,3332386192,CRM,3150,,,1,
-Tando Allah Yar,Tando Allah Yar,Urban,"9,405",Sumiya Patoli,3363907047,CRM,2100,,,1,
-Tando Allah Yar,Tando Allah Yar,Urban,"9,405",Tasleem Fatima,3130696886,CRM,,,,1,
-Tando Muhammad Khan,Bulri Shah Karim,Rural,"13,101",Sameena N/A,3483348951,ASPC,1050,No documentation provided,5,1,
-Tando Muhammad Khan,Tando Ghulam Hyder,Rural,"5,816",Shameem Aara,3408545930,ASPC,,Error: Bachelor without FSc,,1,
-Tando Muhammad Khan,Tando Ghulam Hyder,Rural,"5,816",Qumer Ul Nissa,3423318697,CRM,2100,,,1,
-Tando Muhammad Khan,Tando Muhammad Khan,Urban,"9,973",Bharti Kumari,3102746204,ASPC,,Error: Master without Bachelor,,1,
-Tando Muhammad Khan,Tando Muhammad Khan,Urban,"9,973",Zahida Bashir,3133695751,CRM,2100,,,1,
-Tharparkar,Chachro,Rural,"11,308",Naziran,3412864765,CRM,6300,,34,1,
-Tharparkar,Chachro,Rural,"11,308",Aisha,3413943509,SUPERVISOR,,,,1,
-Tharparkar,Dahli,Rural,"3,962",Aklan,3402436629,ASPC,2100,No documentation provided,,1,
-Tharparkar,Dahli,Rural,"3,962",Najma,3428493680/3423350355,CRM,,,,1,
-Tharparkar,Diplo,Rural,"5,872",Sumaya,3362843814/03363643028,ASPC,,No documentation provided,,1,
-Tharparkar,Diplo,Rural,"5,872",Bakhtawar,3457433648,CRM,2100,,,1,
-Tharparkar,Islamkot,Rural,"14,600",Tahseen,3488301681,ASPC,6300,No documentation provided,,1,
-Tharparkar,Islamkot,Rural,"14,600",Geeta Devi,3122595310,CRM,,,,1,
-Tharparkar,Kaloi,Rural,"9,369",Rahim Zadi,3431313512,ASPC,4300,No documentation provided,,1,
-Tharparkar,Kaloi,Rural,"9,369",Sangeeta Bai,3013243077,CRM,,,,1,
-Tharparkar,Mithi,Urban,"13,074",Geeta Bai,3337108835,CRM,,,,1,
-Tharparkar,Mithi,Urban,"13,074",Samreen,3473700090,CRM,8400,,,1,
-Tharparkar,Nagar Parkar,Rural,"13,026",Sheela,3496889338,SUPERVISOR,6300,,,1,
-Tharparkar,Nagar Parkar,Rural,"13,026",Pawan Kanweer,3433919164,USHER,,,,1,
-Thatta,Ghorabari,Rural,"4,418",Najma,3047983016,CRM,,,18,1,
-Thatta,Ghorabari,Rural,"4,418",Samina,3243571906,CRM,2100,,,1,
-Thatta,Keti Bunder,Rural,692,Sana,3310327436,ASPC,,33.71,,1,
-Thatta,Keti Bunder,Rural,692,Aysha Pervez,3243526981,CRM,2100,,,1,
-Thatta,Mirpur Sakro,Rural,"11,857",Fahmida Batool,3012011264,ASPC,,59.03,,1,
-Thatta,Mirpur Sakro,Rural,"11,857",Maira,3423348861,CRM,6300,,,1,
-Thatta,Thatta,Urban,"11,805",Nasreen,3101633110,ASPC,8400,33.59,,1,
-Thatta,Thatta,Urban,"11,805",Nayab,3183129503,SUPERVISOR,,,,1,
-Umer Kot,Kunri,Rural,"13,088",Tanveer Kausar,3362914950,CRM,6300,,30,1,
-Umer Kot,Kunri,Rural,"13,088",Shazia Abdul Ghaffar,3066414128,SUPERVISOR,,,,1,
-Umer Kot,Pithoro,Rural,"11,045",Nisha,3363314569,ASPC,,Error: FSc without Matric,,1,
-Umer Kot,Pithoro,Rural,"11,045",Saveeta,3323411330/3362826213,CRM,6300,,,1,
-Umer Kot,Samaro,Rural,"8,045",Raveena,3322284989,ASPC,,58.24,,1,
-Umer Kot,Samaro,Rural,"8,045",Sania,3420356595,CRM,4300,,,1,
-Umer Kot,Umer Kot,Urban,"29,453",Rekha Bai,3330272015,ASPC,14700,Error: Master without Bachelor,,1,
-Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without Matric,,1,
+            // --- DATA SOURCE ---
+            // NOTE: The new dataset has been converted to CSV format and embedded here.
+            const CSV_DATA = `Name,Gender,CNIC,PhoneNumber,District,Tehsil,Selected,TotalHeadcount,ConsideredHeadcount,TrainersNeeded,TrainersPresent,SoftLaunch,RuralUrban
+Seema Soomro,Female,4110120003744,03352154933,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Nargis parveen,Female,4110141815616,03408640186,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Naila,Female,4110152897356,+923352214322,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Sundas,Female,4130324945998,03130037633,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Gul Sanober,Female,4120171976856,03460632200,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Fazila,Female,4110169509542,3461869123,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Ruqaya Soomro,Female,4110177693064,3183177109,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Hadeesa,Female,4110190594766,3490342001,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Shazia Ali Gul,Female,4110167107238,3332537775,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Quratulain,Female,4110151748796,3292650179,Badin,Badin,Yes,"21,213",10500,10,18,Yes,Urban
+Amber,Female,4110299672606,03470136108,Badin,Golarchi,Yes,"11,960",4200,4,5,Yes,Rural
+Jahangeer Ali,Male,4110227913801,03327822439,Badin,Golarchi,Yes,"11,960",4200,4,5,Yes,Rural
+Jaiwanti Parmar,Female,4410498139320,03429631235,Badin,Golarchi,Yes,"11,960",4200,4,5,Yes,Rural
+Samina,Female,4110255719206,3000876345,Badin,Golarchi,Yes,"11,960",4200,4,5,Yes,Rural
+Adil mehmood arain,Male,4110326065129,03447623272,Badin,Matli,Yes,"14,231",6300,6,8,Yes,Rural
+Abdul Manan,Male,4110380726415,03458374287,Badin,Matli,Yes,"14,231",6300,6,8,Yes,Rural
+Sarfraz Ahmed,Male,4110306521125,03243435238,Badin,Matli,Yes,"14,231",6300,6,8,Yes,Rural
+Uzair Ahmed,Male,4110337904863,03432701812,Badin,Matli,Yes,"14,231",6300,6,8,Yes,Rural
+Sanam,Female,4110354561880,03133290695,Badin,Matli,Yes,"14,231",6300,6,8,Yes,Rural
+Saima,Female,4110325144460,03113859151,Badin,Matli,Yes,"14,231",6300,6,8,Yes,Rural
+Madiha,Female,4110343612498,3442383504,Badin,Talhar,Yes,"10,330",1050,1,1,Yes,Rural
+Roshan Ali,Male,4110183508787,03263665415,Badin,Tando Bago,Yes,"13,803",6300,6,7,Yes,Rural
+Sajjad Ali,Male,4110436204067,03272793228,Badin,Tando Bago,Yes,"13,803",6300,6,7,Yes,Rural
+Asad Ali,Male,4110498772753,03083581307,Badin,Tando Bago,Yes,"13,803",6300,6,7,Yes,Rural
+Yasir,Male,4110403005069,03163034198,Badin,Tando Bago,Yes,"13,803",6300,6,7,Yes,Rural
+Muhammad Zubair,Male,4110465931245,03451112786,Badin,Tando Bago,Yes,"13,803",6300,6,7,Yes,Rural
+Zakia,Female,4110427003100,3322934946,Badin,Tando Bago,Yes,"13,803",6300,6,7,Yes,Rural
+Mehnaz,Female,4510572049320,03013250345,Ghotki,Mirpur Mathelo,Yes,"21,335",2100,2,2,No,Urban
+Asia alias papi,Female,4330437575152,03268933265,Ghotki,Mirpur Mathelo,Yes,"21,335",2100,2,2,No,Urban
+Surya begum,Female,4310101101388,03334477318,Jacobabad,Garhi Khairo,Yes,"8,386",2100,2,7,No,Rural
+Shabana Naz,Female,4310242995092,03163974829,Jacobabad,Garhi Khairo,Yes,"8,386",2100,2,7,No,Rural
+Asma,Female,4310570881154,03033992194,Jacobabad,Thul,Yes,"26,393",2100,2,35,No,Rural
+Madiha,Female,4310254351942,03310434078,Jacobabad,Thul,Yes,"26,393",2100,2,35,No,Rural
+Saima,Female,4340206968200,03312807601,Kambar Shahdadkot,Kambar Ali Khan,Yes,"16,071",2100,2,31,No,Urban
+NAJIMA,Female,4340406329920,03243752579,Kambar Shahdadkot,Kambar Ali Khan,Yes,"16,071",2100,2,31,No,Urban
+Nijhana Parveen,Female,4540272370526,03063689399,Kambar Shahdadkot,Miro Khan,Yes,"6,986",2100,2,12,No,Rural
+Riaz Hussain,Male,4520870137725,03003100191,Kambar Shahdadkot,Miro Khan,Yes,"6,986",2100,2,12,No,Rural
+Iram,Female,4340306334126,3128101105,Kambar Shahdadkot,Nasirabad,Yes,"7,336",3150,3,19,No,Rural
+Asifa,Female,4320385977548,03042418637,Kambar Shahdadkot,Nasirabad,Yes,"7,336",3150,3,19,No,Rural
+Shazia,Female,4320720670302,03103433046,Kambar Shahdadkot,Nasirabad,Yes,"7,336",3150,3,19,No,Rural
+Rehana Khatoon,Female,4320432872154,03302937448,Kambar Shahdadkot,Shahdadkot,Yes,"4,909",3150,3,13,No,Urban
+Saira,Female,4320368026556,03183376013,Kambar Shahdadkot,Shahdadkot,Yes,"4,909",3150,3,13,No,Urban
+Shanul,Female,4320620230976,03363711369,Kambar Shahdadkot,Shahdadkot,Yes,"4,909",3150,3,13,No,Urban
+Ghulam Mustafa,Male,4340403959895,03311355799,Kambar Shahdadkot,Sujawal Junejo,Yes,"6,530",2100,2,2,No,Rural
+Ashfaque AHMED LAGHARI,Male,4340403480591,03016316876,Kambar Shahdadkot,Sujawal Junejo,Yes,"6,530",2100,2,2,No,Rural
+Zamra Rehman,Female,5120250987104,03426481799,Kambar Shahdadkot,Warah,Yes,"10,789",1050,1,5,No,Rural
+Farasat Irshad,Male,3210364304644,03496754169,Kashmore,Kashmore,Yes,"20,229",2100,2,4,No,Urban
+Maryam Soomro,Female,4220140697840,03113958549,Kashmore,Kashmore,Yes,"20,229",2100,2,4,No,Urban
+Samreen,Female,4130356933866,03133643010,Matiari,Hala,Yes,"9,540",6300,6,14,No,Rural
+Uzma,Female,4120331091098,03313690269,Matiari,Hala,Yes,"9,540",6300,6,14,No,Rural
+Aleena Kiran,Female,4130129465906,03133649043,Matiari,Hala,Yes,"9,540",6300,6,14,No,Rural
+Kousar sidra,Female,4130509108498,03022713090,Matiari,Hala,Yes,"9,540",6300,6,14,No,Rural
+Reena,Female,4180206430884,03059615417,Matiari,Hala,Yes,"9,540",6300,6,14,No,Rural
+Tania,Female,4180206391890,03043189465,Matiari,Hala,Yes,"9,540",6300,6,14,No,Rural
+Sadia,Female,4520814434320,03173804559,Matiari,Matiari,Yes,"12,149",6300,6,37,No,Urban
+Mona Shah,Female,4130505341388,03029155504,Matiari,Matiari,Yes,"12,149",6300,6,37,No,Urban
+Mona shah,Female,4130505341388,03029155504,Matiari,Matiari,Yes,"12,149",6300,6,37,No,Urban
+Mehnaz,Female,4530368319576,03093028342,Matiari,Matiari,Yes,"12,149",6300,6,37,No,Urban
+Shazia Jabeen,Female,1210109160364,03316860113,Matiari,Matiari,Yes,"12,149",6300,6,37,No,Urban
+Tahmina,Female,4130537610532,03083360771,Matiari,Matiari,Yes,"12,149",6300,6,37,No,Urban
+Shahida,Female,4540374549432,03200263738,Matiari,Saeedabad,Yes,"7,528",2100,2,6,No,Rural
+Badshahzadi,Female,4520657677502,03003186190,Matiari,Saeedabad,Yes,"7,528",2100,2,6,No,Rural
+Rukhsana,Female,4410117939738,03033105436,Mirpur Khas,Digri,Yes,"7,628",3150,3,9,No,Rural
+Sadaf,Female,4410238100196,03020032050,Mirpur Khas,Digri,Yes,"7,628",3150,3,9,No,Rural
+Sheezan shoukat,Female,4410194161595,03082936459,Mirpur Khas,Digri,Yes,"7,628",3150,3,9,No,Rural
+Shahneela,Female,4410362501656,03332386192,Mirpur Khas,Hussain Bux Mari,Yes,"8,436",2100,2,9,No,Rural
+Murk,Female,4410776658736,03233445133,Mirpur Khas,Hussain Bux Mari,Yes,"8,436",2100,2,9,No,Rural
+Saba Talpur,Female,4410805786034,03313919704,Mirpur Khas,Jhudo,Yes,"9,122",4200,4,10,No,Rural
+Sultana,Female,4410805786034,03133030736,Mirpur Khas,Jhudo,Yes,"9,122",4200,4,10,No,Rural
+Suneel Sindhi,Female,4410803496283,03313903698,Mirpur Khas,Jhudo,Yes,"9,122",4200,4,10,No,Rural
+JIA ROOPANI,Female,4410330627028,03330248524,Mirpur Khas,Jhudo,Yes,"9,122",4200,4,10,No,Rural
+Annessa,Female,4410277740478,03063705209,Mirpur Khas,Kot Ghulam Muhammad,Yes,"10,133",4200,4,7,No,Rural
+Ganga,Female,4410272455252,03452382735,Mirpur Khas,Kot Ghulam Muhammad,Yes,"10,133",4200,4,7,No,Rural
+Shevo Mal,Female,4410389858751,03023315682,Mirpur Khas,Kot Ghulam Muhammad,Yes,"10,133",4200,4,7,No,Rural
+Noshaba Abdul Wahab,Female,4410221417842,03083006668,Mirpur Khas,Kot Ghulam Muhammad,Yes,"10,133",4200,4,7,No,Rural
+TEHMINA YAMEEN,Female,4410358749916,03103862906,Mirpur Khas,Mirpur Khas,Yes,"5,518",3150,3,26,No,Urban
+Haneefa soomro,Female,4410350515744,03362236886,Mirpur Khas,Mirpur Khas,Yes,"5,518",3150,3,26,No,Urban
+Aqsa Khan,Female,4410324786798,03103663127,Mirpur Khas,Mirpur Khas,Yes,"5,518",3150,3,26,No,Urban
+Vasdev,Female,4410310339981,03225322130,Mirpur Khas,Shujaabad,Yes,"8,524",4200,4,4,No,Rural
+Bibo,Female,4410371547906,03063907718,Mirpur Khas,Shujaabad,Yes,"8,524",4200,4,4,No,Rural
+Jairam das,Male,4410379266093,03102741334,Mirpur Khas,Shujaabad,Yes,"8,524",4200,4,4,No,Rural
+Anam,Female,4410306843364,03362884191,Mirpur Khas,Shujaabad,Yes,"8,524",4200,4,4,No,Rural
+Khalida,Female,4410905892840,03208340500,Mirpur Khas,Sindhri,Yes,"12,047",4200,4,4,No,Rural
+Hifsa,Female,4410905892840,03181397662,Mirpur Khas,Sindhri,Yes,"12,047",4200,4,4,No,Rural
+Keenjhar,Female,4410316188164,03131100644,Mirpur Khas,Sindhri,Yes,"12,047",4200,4,4,No,Rural
+Bakhtawar,Female,4420257796320,03343127717,Mirpur Khas,Sindhri,Yes,"12,047",4200,4,4,No,Rural
+Afroz,Female,4420148598598,03063904408,Sanghar,Jam Nawaz Ali,Yes,"8,045",1050,1,2,Yes,Rural
+Asad Ali,Male,4520661744649,03023107445,Sanghar,Khipro,Yes,"14,052",6300,6,7,Yes,Rural
+sahaskaran,Female,4420270905205,03332714930,Sanghar,Khipro,Yes,"14,052",6300,6,7,Yes,Rural
+Mashooque Ali Dars,Male,4420212379041,03311354066,Sanghar,Khipro,Yes,"14,052",6300,6,7,Yes,Rural
+MARYAM,Female,4410458635808,3052269261,Sanghar,Khipro,Yes,"14,052",6300,6,7,Yes,Rural
+Nida mohsin,Female,4420283938986,3473815172,Sanghar,Khipro,Yes,"14,052",6300,6,7,Yes,Rural
+Hassan Raza,Male,4420235666737,3342105342,Sanghar,Khipro,Yes,"14,052",6300,6,7,Yes,Rural
+Shabana,Female,4420383477324,03133997394,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Shazma,Female,4540366981596,03262709750,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Sumera,Female,4420310029874,03486382322,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Andleeb Abid,Female,4420347731344,03332912352,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Tehreem Abid,Female,4420347635394,03153027184,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Shaheen Nida,Female,4540232791292,03202548709,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Aliza,Female,4420376003948,03190272757,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Shabana,Female,4420383477324,03133997394,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Aqsa Ali,Female,4420341454538,3233766500,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Sadaf,Female,4540204528516,3043018961,Sanghar,Sanghar,Yes,"17,002",10500,10,22,Yes,Urban
+Asia,Female,4420450813030,03153731066,Sanghar,Shahdadpur,Yes,"13,152",6300,6,11,Yes,Urban
+Faiza,Female,4420472012004,03342185215,Sanghar,Shahdadpur,Yes,"13,152",6300,6,11,Yes,Urban
+IQBAL AHMED,Male,4540366205855,03002350120,Sanghar,Shahdadpur,Yes,"13,152",6300,6,11,Yes,Urban
+Parwaiz Alam,Male,4420437457727,03043215448,Sanghar,Shahdadpur,Yes,"13,152",6300,6,11,Yes,Urban
+ZUHAIB,Male,4420440226211,03072095910,Sanghar,Shahdadpur,Yes,"13,152",6300,6,11,Yes,Urban
+Imran Ali,Male,4420466091563,03007518561,Sanghar,Shahdadpur,Yes,"13,152",6300,6,11,Yes,Urban
+Ruqia,Female,4420592281198,03443727788,Sanghar,Sinjhoro,Yes,"14,786",8400,8,9,Yes,Rural
+Adil,Male,4420506737839,03128684673,Sanghar,Sinjhoro,Yes,"14,786",8400,8,9,Yes,Rural
+Aamir Nawaz,Male,4420570778641,03041273879,Sanghar,Sinjhoro,Yes,"14,786",8400,8,9,Yes,Rural
+Raj Kumar,Male,4420578531487,03232510845,Sanghar,Sinjhoro,Yes,"14,786",8400,8,9,Yes,Rural
+Badarudin,Male,4530435913499,03032808026,Sanghar,Sinjhoro,Yes,"14,786",8400,8,9,Yes,Rural
+Mohsin Perwaiz,Male,4420540873781,03363832615,Sanghar,Sinjhoro,Yes,"14,786",8400,8,9,Yes,Rural
+Almehra,Female,4420525136374,3302768799,Sanghar,Sinjhoro,Yes,"14,786",8400,8,9,Yes,Rural
+Muhammad Riaz,Male,4420597586091,3058068047,Sanghar,Sinjhoro,Yes,"14,786",8400,8,9,Yes,Rural
+Muzamil,Female,4420620302460,03113253547,Sanghar,Tando Adam,Yes,"10,194",6300,6,6,Yes,Urban
+Junaid Ahmed,Male,4350304626983,03123578283,Sanghar,Tando Adam,Yes,"10,194",6300,6,6,Yes,Urban
+Muhammad Nasir Ghouri,Male,4420695724229,03332758975,Sanghar,Tando Adam,Yes,"10,194",6300,6,6,Yes,Urban
+Parvish,Female,4420340238490,03013553965,Sanghar,Tando Adam,Yes,"10,194",6300,6,6,Yes,Urban
+Muzamil,Male,4420620302460,03113253547,Sanghar,Tando Adam,Yes,"10,194",6300,6,6,Yes,Urban
+Ishrat,Female,4520677271556,3002044877,Sanghar,Tando Adam,Yes,"10,194",6300,6,6,Yes,Urban
+Nazia,Female,4510185628710,03053566690,Shikarpur,Shikarpur,Yes,"8,424",2100,2,21,No,Urban
+Adeela Shah,Female,4330453033038,3363373360,Shikarpur,Shikarpur,Yes,"8,424",2100,2,21,No,Urban
+Ali Muhammad Samejo,Male,4140217511869,03412728994,Sujawal,Jati,Yes,"6,368",4200,4,4,Yes,Rural
+Mir Muhammad,Male,4190304348969,3112903073,Sujawal,Jati,Yes,"6,368",4200,4,4,Yes,Rural
+fateh muhammad,Male,4140181961523,3117980692,Sujawal,Jati,Yes,"6,368",4200,4,4,Yes,Rural
+Mir Muhammad,Male,4190304348969,3112903073,Sujawal,Jati,Yes,"6,368",4200,4,4,Yes,Rural
+Naila,Female,4190203388210,+923182307796,Sujawal,Mirpur Bathoro,Yes,"7,803",4200,4,5,Yes,Rural
+Dr Muhammad Qasim,Male,4190203527725,0304-3133275,Sujawal,Mirpur Bathoro,Yes,"7,803",4200,4,5,Yes,Rural
+Sajida Parhyar,Female,4190203488226,03173992368,Sujawal,Mirpur Bathoro,Yes,"7,803",4200,4,5,Yes,Rural
+Aiman,Female,4190203490316,03102454344,Sujawal,Mirpur Bathoro,Yes,"7,803",4200,4,5,Yes,Rural
+Amna Parveen,Female,4190403347894,03168447596,Sujawal,Shah Bunder,Yes,"3,777",3150,3,9,Yes,Rural
+Muhammad Hassan Dars,Male,4140772997959,03133796798,Sujawal,Shah Bunder,Yes,"3,777",3150,3,9,Yes,Rural
+Aisha Umrani,Female,4140796119266,3203645928,Sujawal,Shah Bunder,Yes,"3,777",3150,3,9,Yes,Rural
+nazeeran Parheri,Female,4140887898616,03130034493,Sujawal,Sujawal,Yes,"8,238",6300,6,10,Yes,Urban
+Asadullah,Male,4140840549201,03123265044,Sujawal,Sujawal,Yes,"8,238",6300,6,10,Yes,Urban
+Saima,Female,4140824720944,3163931792,Sujawal,Sujawal,Yes,"8,238",6300,6,10,Yes,Urban
+Shaheen,Female,4190103465330,3163165527,Sujawal,Sujawal,Yes,"8,238",6300,6,10,Yes,Urban
+Asifa,Female,4190103562900,3152930925,Sujawal,Sujawal,Yes,"8,238",6300,6,10,Yes,Urban
+Naila parveen,Female,3820153373704,03163549853,Sujawal,Sujawal,Yes,"8,238",6300,6,10,Yes,Urban
+Ali Hasnain,Male,4170206146547,03123634747,Tando Allah Yar,Chamber,Yes,"11,593",5250,5,6,No,Rural
+Junaid Ali Laghari,Male,4130336553999,03133514392,Tando Allah Yar,Chamber,Yes,"11,593",5250,5,6,No,Rural
+Istikhar Ali,Male,4170206269877,03023907406,Tando Allah Yar,Chamber,Yes,"11,593",5250,5,6,No,Rural
+Hassan Raza,Male,4130633826431,03131795673,Tando Allah Yar,Chamber,Yes,"11,593",5250,5,6,No,Rural
+Nabeela kanwal,Female,4530202507332,03073127691,Tando Allah Yar,Chamber,Yes,"11,593",5250,5,6,No,Rural
+Maqsood Ali,Male,4170306116525,03461236115,Tando Allah Yar,Jhando Mari,Yes,"11,432",6300,6,10,No,Rural
+Suhail Ahmed,Male,4170306552579,03001729300,Tando Allah Yar,Jhando Mari,Yes,"11,432",6300,6,10,No,Rural
+Bashir Ali,Male,4130756054120,3073094698,Tando Allah Yar,Jhando Mari,Yes,"11,432",6300,6,10,No,Rural
+Muhammad Saleem Bhutto,Male,4530372707199,03022814294,Tando Allah Yar,Jhando Mari,Yes,"11,432",6300,6,10,No,Rural
+Benazir,Female,4130726006242,03312091846,Tando Allah Yar,Jhando Mari,Yes,"11,432",6300,6,10,No,Rural
+Shamim,Female,4130719626488,03103856489,Tando Allah Yar,Jhando Mari,Yes,"11,432",6300,6,10,No,Rural
+Sumaiya Naveed Parvez,Female,4130732112892,03363907047,Tando Allah Yar,Tando Allah Yar,Yes,"9,405",4200,4,30,No,Urban
+TASLEEM BABY,Female,4170106054060,03130696866,Tando Allah Yar,Tando Allah Yar,Yes,"9,405",4200,4,30,No,Urban
+Sabiha,Female,4130636881666,03330397004,Tando Allah Yar,Tando Allah Yar,Yes,"9,405",4200,4,30,No,Urban
+Suriya Jamali,Female,4120141465138,03141131121,Tando Allah Yar,Tando Allah Yar,Yes,"9,405",4200,4,30,No,Urban
+Muhammad Ishaque Solangi,Male,4130867941549,03343174765,Tando Muhammad Khan,Bulri Shah Karim,Yes,"13,101",4200,4,6,No,Rural
+Khalid Hussain,Male,4120311504329,03180405655,Tando Muhammad Khan,Bulri Shah Karim,Yes,"13,101",4200,4,6,No,Rural
+Ali Muhammad,Male,4160106631997,03233001028,Tando Muhammad Khan,Bulri Shah Karim,Yes,"13,101",4200,4,6,No,Rural
+Mehtab Ahmed,Male,4160206376295,03303425325,Tando Muhammad Khan,Bulri Shah Karim,Yes,"13,101",4200,4,6,No,Rural
+Shamim Ara,Female,4110558066388,03404585930,Tando Muhammad Khan,Tando Ghulam Hyder,Yes,"5,816",2100,2,3,No,Rural
+Sanya,Female,4110328834744,03219030706,Tando Muhammad Khan,Tando Ghulam Hyder,Yes,"5,816",2100,2,3,No,Rural
+Bharti,Female,4160106283168,03102746204,Tando Muhammad Khan,Tando Muhammad Khan,Yes,"9,973",4200,4,13,No,Urban
+Nosheen,Female,4520841851124,03160205256,Tando Muhammad Khan,Tando Muhammad Khan,Yes,"9,973",4200,4,13,No,Urban
+Sanam*,Female,4110354561880,03133290695,Tando Muhammad Khan,Tando Muhammad Khan,Yes,"9,973",4200,4,13,No,Urban
+Sabra,Female,4130815299818,03177111732,Tando Muhammad Khan,Tando Muhammad Khan,Yes,"9,973",4200,4,13,No,Urban
+Khawar Aziz,Male,4530477119723,03163295094,Tharparkar,Chachro,Yes,"11,308",2100,2,2,No,Rural
+Nazeeran,Female,4430170385566,3470126613,Tharparkar,Chachro,Yes,"11,308",2100,2,2,No,Rural
+Najman,Female,4430123734214,3413679130,Tharparkar,Dahli,Yes,"3,962",2100,2,5,No,Rural
+Aklan,Female,4430103393990,3402436629,Tharparkar,Dahli,Yes,"3,962",2100,2,5,No,Rural
+Darpan Kumar,Male,4430228828015,03322083532,Tharparkar,Diplo,Yes,"5,872",2100,2,4,No,Rural
+Guness Meghwar,Male,4430272103751,03408493040,Tharparkar,Diplo,Yes,"5,872",2100,2,4,No,Rural
+Ranjeet Singh,Male,4430349777281,03425960456,Tharparkar,Islamkot,Yes,"14,600",6300,6,7,No,Rural
+Mukesh Kumar,Male,4430503804723,03454152576,Tharparkar,Islamkot,Yes,"14,600",6300,6,7,No,Rural
+Preetam,Male,4430378770857,03473649525,Tharparkar,Islamkot,Yes,"14,600",6300,6,7,No,Rural
+Muneer Ahmed,Male,4430503985441,3460308300,Tharparkar,Islamkot,Yes,"14,600",6300,6,7,No,Rural
+Jairam,Female,4430504363239,3432387379,Tharparkar,Islamkot,Yes,"14,600",6300,6,7,No,Rural
+Geeta Devi,Female,4130368713160,03003561944,Tharparkar,Islamkot,Yes,"14,600",6300,6,7,No,Rural
+Videsh Kumar,Male,4430282569689,03410850152,Tharparkar,Kaloi,Yes,"9,369",4200,4,4,No,Rural
+Sangeeta Bai,Female,4430289636138,03463758937,Tharparkar,Kaloi,Yes,"9,369",4200,4,4,No,Rural
+Rahimzadi,Female,4430205511328,03413500468,Tharparkar,Kaloi,Yes,"9,369",4200,4,4,No,Rural
+Rahimzadi,Female,4430205511328,03413500468,Tharparkar,Kaloi,Yes,"9,369",4200,4,4,No,Rural
+LATA kumari,Female,4430335934738,03479411303,Tharparkar,Mithi,Yes,"13,074",8400,8,15,No,Urban
+Ali Raza Lakho,Male,4130361727453,03093238188,Tharparkar,Mithi,Yes,"13,074",8400,8,15,No,Urban
+Danish Kumar,Male,4430337130419,03488925001,Tharparkar,Mithi,Yes,"13,074",8400,8,15,No,Urban
+Zakar Ahmed,Male,4430176417513,03312788753,Tharparkar,Mithi,Yes,"13,074",8400,8,15,No,Urban
+Deepak Kumar,Male,4410123004069,03403663296,Tharparkar,Mithi,Yes,"13,074",8400,8,15,No,Urban
+Narain Das,Female,4430319126427,03305812194,Tharparkar,Mithi,Yes,"13,074",8400,8,15,No,Urban
+Aneela Devi,Female,4430335934738,+923472522282,Tharparkar,Mithi,Yes,"13,074",8400,8,15,No,Urban
+Geeta bai,Female,4430116718500,3378254709,Tharparkar,Mithi,Yes,"13,074",8400,8,15,No,Urban
+Ghulam Sarwar,Male,4430488494571,03492651572,Tharparkar,Nagar Parkar,Yes,"13,026",2100,2,2,No,Rural
+Ramoon,Male,4430466483595,03455210897,Tharparkar,Nagar Parkar,Yes,"13,026",2100,2,2,No,Rural
+Najma,Female,4140166669024,3047983016,Thatta,Ghorabari,Yes,"4,418",2100,2,2,Yes,Rural
+Sohail UR Rehman,Male,4140919503401,03701221272,Thatta,Ghorabari,Yes,"4,418",2100,2,2,Yes,Rural
+Aisha pervez,Female,4140670610368,03243526981,Thatta,Mirpur Sakro,Yes,"11,857",4200,4,4,Yes,Rural
+Gulshan lashari,Female,4141060564788,23213180192,Thatta,Mirpur Sakro,Yes,"11,857",4200,4,4,Yes,Rural
+Ghulam Mahdi,Male,4520835611501,3323929510,Thatta,Mirpur Sakro,Yes,"11,857",4200,4,4,Yes,Rural
+Gulnaz,Female,4140672734370,3202702789,Thatta,Mirpur Sakro,Yes,"11,857",4200,4,4,Yes,Rural
+Nayab,Female,4140947236946,03183129503,Thatta,Thatta,Yes,"11,805",8400,8,14,Yes,Urban
+Sarwan Abbasi,Female,4250188733281,03282368087,Thatta,Thatta,Yes,"11,805",8400,8,14,Yes,Urban
+Ghulam Zohra,Female,4130628968106,03192943336,Thatta,Thatta,Yes,"11,805",8400,8,14,Yes,Urban
+Paras,Female,4140993916826,03322989553,Thatta,Thatta,Yes,"11,805",8400,8,14,Yes,Urban
+Chandrika Kumari,Female,4140921536346,03170222438,Thatta,Thatta,Yes,"11,805",8400,8,14,Yes,Urban
+Shahnaz lashari,Female,4140657851446,3293291016,Thatta,Thatta,Yes,"11,805",8400,8,14,Yes,Urban
+Sahar Farooque,Female,4140966941912,3208312686,Thatta,Thatta,Yes,"11,805",8400,8,14,Yes,Urban
+Paras,Female,4140993916826,3322989553,Thatta,Thatta,Yes,"11,805",8400,8,14,Yes,Urban
+Shazia,Female,4410423793140,03346811834,Umer Kot,Kunri,Yes,"13,088",8400,8,16,No,Rural
+Shazia Abdul Ghaffar,Female,4410423793714,03346811834,Umer Kot,Kunri,Yes,"13,088",8400,8,16,No,Rural
+Fiza,Female,4440484630404,03303340504,Umer Kot,Kunri,Yes,"13,088",8400,8,16,No,Rural
+Zara Amjad,Female,4440482965972,03022685300,Umer Kot,Kunri,Yes,"13,088",8400,8,16,No,Rural
+Zara Amjad,Female,4440482965972,3022685300,Umer Kot,Kunri,Yes,"13,088",8400,8,16,No,Rural
+Shazia Abdul Ghaffar,Female,4410423793714,03346811834,Umer Kot,Kunri,Yes,"13,088",8400,8,16,No,Rural
+Tanveer kosar,Female,4440439760476,3346611876,Umer Kot,Kunri,Yes,"13,088",8400,8,16,No,Rural
+Nirmala Parmar,Female,4410485631210,3033456457,Umer Kot,Kunri,Yes,"13,088",8400,8,16,No,Rural
+Ahtesham,Male,4440329245079,03451331563,Umer Kot,Pithoro,Yes,"11,045",5250,5,5,No,Rural
+Zohaib Hassan,Male,4410557824721,03173456613,Umer Kot,Pithoro,Yes,"11,045",5250,5,5,No,Rural
+Nisha,Female,4440397456446,03363314569,Umer Kot,Pithoro,Yes,"11,045",5250,5,5,No,Rural
+Saveeta,Female,4430288460600,03362826213,Umer Kot,Pithoro,Yes,"11,045",5250,5,5,No,Rural
+Saveeta,Female,4430288460600,03362826213,Umer Kot,Pithoro,Yes,"11,045",5250,5,5,No,Rural
+Fardeen Ali,Male,4440249496299,03450107426,Umer Kot,Samaro,Yes,"8,045",4200,4,8,No,Rural
+Mangha Ram,Male,4410696500155,03313705194,Umer Kot,Samaro,Yes,"8,045",4200,4,8,No,Rural
+Sania,Female,4440168647076,03420356595,Umer Kot,Samaro,Yes,"8,045",4200,4,8,No,Rural
+Sania,Female,4440168647076,03420356595,Umer Kot,Samaro,Yes,"8,045",4200,4,8,No,Rural
+Lachhman das khatri,Male,4410765851825,03473481058,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Muhammad Ismail,Male,4310101669061,03009257271,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Kajal,Female,4410779606188,03111652285,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Syd Shahab Ahmad Jan,Male,1520278753535,03443457162,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Mathan kumar,Male,4440174734873,03488585188,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Abdul subhan,Male,4440105938753,3181184985,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Lekhraj,Male,4440127301179,03437703413,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Suhail Ahmed Jumani,Male,4130604613063,03337582676,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Afshan,Male,4120148134062,03192780510,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Muhammad Haseeb,Male,4440197608553,0307-3991916,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Muhammad Hussain,Male,4410716686859,03003550801,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Hishmat,Male,4440194121933,03403032873,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Muhammad Bux,Male,4410720466813,+923332978960,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Sunail Kumar,Male,4440179845927,03453898939,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Assan Dass,Male,4440125036107,03453719066,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
+Rekha bai,Female,4440120324198,03368486049,Umer Kot,Umer Kot,Yes,"29,453",16800,16,23,No,Urban
 `;
             
-            const sspaLogoBase64 = "https://www.sdpi.org/assets/images/sdpi-logo-2020.webp";
-
-            const districtSummaries = {
-                "Badin": { headcount: 37907, contracted: 11, totalTrainers: 36 }, "Ghotki": { headcount: 2100, contracted: 2, totalTrainers: 2 },
-                "Jacobabad": { headcount: 5250, contracted: 5, totalTrainers: 5 }, "Kambar Shahdadkot": { headcount: 13650, contracted: 13, totalTrainers: 13 },
-                "Kashmore": { headcount: 2100, contracted: 2, totalTrainers: 2 }, "Matiari": { headcount: 5250, contracted: 5, totalTrainers: 5 },
-                "Mirpur Khas": { headcount: 25200, contracted: 18, totalTrainers: 24 }, "Sanghar": { headcount: 42200, contracted: 11, totalTrainers: 40 },
-                "Shikarpur": { headcount: 2100, contracted: 2, totalTrainers: 2 }, "Sujawal": { headcount: 17850, contracted: 9, totalTrainers: 17 },
-                "Tando Allah Yar": { headcount: 7350, contracted: 7, totalTrainers: 7 }, "Tando Muhammad Khan": { headcount: 5250, contracted: 5, totalTrainers: 5 },
-                "Tharparkar": { headcount: 35800, contracted: 14, totalTrainers: 34 }, "Thatta": { headcount: 18900, contracted: 8, totalTrainers: 18 },
-                "Umer Kot": { headcount: 31600, contracted: 8, totalTrainers: 30 }
-            };
-
-            for (const key in districtSummaries) {
-                if (districtSummaries.hasOwnProperty(key)) {
-                    districtSummaries[key].contracted = districtSummaries[key].totalTrainers;
-                }
-            }
+            // Self-contained Base64 image for the logo
+            const sdpiLogoBase64 = "data:image/webp;base64,UklGRtQMAABXRUJQVlA4IMgMAADwEACdASo8AEsAPm02lkikIqGYp7M5mKANiWlu/H17887/7z/zP+d7l/bf3R+b36l/e/0D/Z/UD/b/3v/c/vX8//3/uV+wH+V/1D/p/43/o/5X3w/89/ff6l/5P+t/e//H/yP+F7gn8A/wv/R/2P+n/yP/h/5H/f/vR/8H/e///3A/81/pf+L/tP9z/6f/B/////+oB/Sv77/9f7z/2/+B////+qZ/2//H9vH/c/+n/Y////58gD/k//D/x/cG////+gB/Of6v/4/6P/U/3f/F////+aV/qf/v/zv+AD+Y/0//q/5H/cf3//9/sD///qBft5/8P+v/xP+B/3H/H////+eZ/u/+j/gP/z/kP///9f2F/+D/b/4v/b/3X/6/3/////5nf//+f/6v/h/////+z7//9T/////+5L/////+tV/////AAAP77A5g1/r/sA0n8W+zF7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4z9xn7jP3GfuM/cZ+4aA/v2A";
 
             const initialTehsilCoords = {
                 "BADIN": [24.65, 68.83], "GOLARCHI": [24.60, 68.75], "MATLI": [25.03, 68.65], "TALHAR": [24.84, 68.80], "TANDO BAGO": [24.79, 69.00],
@@ -415,13 +484,12 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
             const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' }).addTo(map);
             const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
             
-            // Moved this control to prevent overlap with the fixed logo
             L.control.layers({ "Street View": cartoLayer, "Satellite View": satelliteLayer }, null, { position: 'topright' }).addTo(map);
 
             const LogoControl = L.Control.extend({
                 onAdd: function(map) {
                     const container = L.DomUtil.create('div', 'sspa-logo-container');
-                    container.innerHTML = `<img src="${sspaLogoBase64}" alt="SSPA Logo"/>`;
+                    container.innerHTML = `<img src="https://d4d.sdpi.org/assets/images/sdpi-logo-2020.webp" alt="SDPI Logo"/>`;
                     return container;
                 }
             });
@@ -431,76 +499,97 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
             const ruralUrbanFilter = document.getElementById('rural-urban-filter');
             const districtListContainer = document.getElementById('district-list');
             const overviewStatsContainer = document.getElementById('overview-stats');
-            const layers = { districts: L.layerGroup().addTo(map), tehsils: L.layerGroup().addTo(map), lines: L.layerGroup().addTo(map) };
-            let allProcessedData = {}, grandTotals = {}, activeDistrictMarker = null;
+            const layers = { tehsils: L.layerGroup().addTo(map), lines: L.layerGroup().addTo(map) };
+            let allData = {}, districtSummaries = {}, grandTotals = {};
 
             function parseCSV(csv) {
                 const lines = csv.split('\n');
                 const headers = lines[0].split(',').map(h => h.trim());
-                const result = [];
-                for (let i = 1; i < lines.length; i++) {
-                    if (!lines[i].trim()) continue;
+                return lines.slice(1).map(line => {
+                    if (!line.trim()) return null;
                     const obj = {};
-                    const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
-                    for (let j = 0; j < headers.length; j++) {
-                        let value = (values[j] || '').trim();
+                    const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                    headers.forEach((header, i) => {
+                        let value = (values[i] || '').trim();
                         if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
-                        obj[headers[j]] = value;
-                    }
-                    result.push(obj);
-                }
-                return result;
+                        obj[header] = value;
+                    });
+                    return obj;
+                }).filter(Boolean);
             }
-
-            function loadData() {
+            
+            function processAndSummarizeData() {
                 const data = {};
+                const summaries = {};
                 const rows = parseCSV(CSV_DATA);
 
                 rows.forEach(row => {
-                    const { District, Tehsil } = row;
+                    const { District, Tehsil, Name, PhoneNumber, Selected, ConsideredHeadcount, TrainersNeeded, RuralUrban } = row;
                     if (!District || !Tehsil) return;
 
+                    // Initialize District data if not present
                     if (!data[District]) {
                         data[District] = { name: District, tehsils: {} };
+                        summaries[District] = { name: District, headcount: 0, deployed: 0, needed: 0 };
                     }
+                    
+                    // Initialize Tehsil data if not present
                     if (!data[District].tehsils[Tehsil]) {
+                        const headcount = parseInt(ConsideredHeadcount.replace(/,/g, ''), 10) || 0;
+                        const needed = parseInt(TrainersNeeded, 10) || 0;
+                        
                         data[District].tehsils[Tehsil] = {
-                            name: Tehsil, district: District, coords: initialTehsilCoords[Tehsil.toUpperCase()] || null,
-                            // MODIFICATION: Added ruralUrban property to each tehsil
-                            ruralUrban: row['Rural / Urban'],
-                            trainers: [], totalTrainers: 0, contracted: 0
+                            name: Tehsil,
+                            district: District,
+                            coords: initialTehsilCoords[Tehsil.toUpperCase()] || null,
+                            ruralUrban: RuralUrban,
+                            trainers: [],
+                            headcount: headcount,
+                            needed: needed,
+                            deployed: 0
                         };
+                        // Add tehsil-level stats to district summary only once
+                        summaries[District].headcount += headcount;
+                        summaries[District].needed += needed;
                     }
-
+                    
+                    // Add trainer to tehsil
                     const tehsilData = data[District].tehsils[Tehsil];
-                    tehsilData.trainers.push({
-                        name: row['Name'], phone: row['Phone Number'], status: row['Status with BISP'],
-                        ruralUrban: row['Rural / Urban'], comment: row['Comment']
+                    tehsilData.trainers.push({ name: Name, phone: PhoneNumber });
+                    
+                    if (Selected.toLowerCase() === 'yes') {
+                        tehsilData.deployed++;
+                    }
+                });
+                
+                // Final pass to sum up deployed trainers for each district
+                Object.values(data).forEach(district => {
+                    let totalDeployed = 0;
+                    Object.values(district.tehsils).forEach(tehsil => {
+                        totalDeployed += tehsil.deployed;
                     });
-                    
-                    const needed = parseInt(row['Trainers Needed'], 10);
-                    if (!isNaN(needed) && needed > 0) tehsilData.totalTrainers = needed;
-                    
-                    const selected = parseInt(row['Selected'], 10);
-                    if (selected === 1) tehsilData.contracted++;
+                    summaries[district.name].deployed = totalDeployed;
                 });
 
-                allProcessedData = data;
-                
-                Object.keys(allProcessedData).sort().forEach((name, index) => {
-                    allProcessedData[name].color = `hsl(${(index * 137.508) % 360}, 70%, 60%)`;
+                allData = data;
+                districtSummaries = summaries;
+
+                // Assign colors
+                Object.keys(allData).sort().forEach((name, index) => {
+                    allData[name].color = `hsl(${(index * 137.508) % 360}, 70%, 60%)`;
                 });
-                
+
                 calculateGrandTotals();
                 return true;
             }
 
             function calculateGrandTotals() {
-                grandTotals = {
-                    headcount: Object.values(districtSummaries).reduce((sum, s) => sum + s.headcount, 0),
-                    contracted: Object.values(districtSummaries).reduce((sum, s) => sum + s.contracted, 0),
-                    totalTrainers: Object.values(districtSummaries).reduce((sum, s) => sum + s.totalTrainers, 0)
-                };
+                grandTotals = Object.values(districtSummaries).reduce((totals, summary) => {
+                    totals.headcount += summary.headcount;
+                    totals.deployed += summary.deployed;
+                    totals.needed += summary.needed;
+                    return totals;
+                }, { headcount: 0, deployed: 0, needed: 0 });
             }
 
             function initializeDashboard() {
@@ -510,50 +599,46 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
             }
 
             function populateFilters() {
-                const districtNames = ['All', ...Object.keys(allProcessedData).sort()];
+                const districtNames = ['All', ...Object.keys(allData).sort()];
                 districtFilter.innerHTML = districtNames.map(d => `<option value="${d}">${d}</option>`).join('');
             }
 
             function addEventListeners() {
                 districtFilter.addEventListener('change', () => {
                     updateDisplay();
-                    if (districtFilter.value !== 'All') highlightDistrict(districtFilter.value);
+                    if (districtFilter.value !== 'All') highlightDistrict(districtFilter.value, true);
                 });
                 ruralUrbanFilter.addEventListener('change', updateDisplay);
                 document.getElementById('theme-toggle').addEventListener('click', () => {
                     document.body.classList.toggle('dark-mode');
                     const icon = document.querySelector('#theme-toggle i');
-                    icon.classList.toggle('fa-moon', !document.body.classList.contains('dark-mode'));
-                    icon.classList.toggle('fa-sun', document.body.classList.contains('dark-mode'));
+                    icon.className = document.body.classList.contains('dark-mode') ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
                 });
             }
 
             function updateOverviewPanel() {
                 overviewStatsContainer.innerHTML = `
                     <div class="overview-stat"><div class="overview-stat-value">${grandTotals.headcount.toLocaleString()}</div><div class="overview-stat-label">Considered Headcount</div></div>
-                    <div class="overview-stat"><div class="overview-stat-value">${grandTotals.totalTrainers.toLocaleString()}</div><div class="overview-stat-label">Total Deployed ASPCs</div></div>
+                    <div class="overview-stat"><div class="overview-stat-value">${grandTotals.deployed.toLocaleString()} / ${grandTotals.needed.toLocaleString()}</div><div class="overview-stat-label">Total Deployed ASPCs</div></div>
                 `;
             }
 
-            // MODIFICATION: Main display logic updated to handle filters
             function updateDisplay() {
-                ['districts', 'tehsils', 'lines'].forEach(layer => layers[layer].clearLayers());
+                layers.tehsils.clearLayers();
+                layers.lines.clearLayers();
                 districtListContainer.innerHTML = '';
-                activeDistrictMarker = null;
 
                 const selectedDistrict = districtFilter.value;
                 const selectedClassification = ruralUrbanFilter.value;
 
-                const districtsToDisplay = Object.values(allProcessedData)
+                const districtsToDisplay = Object.values(allData)
                     .filter(d => selectedDistrict === 'All' || d.name === selectedDistrict);
 
                 districtsToDisplay.forEach((district, index) => {
-                    // Filter tehsils based on the classification dropdown
                     const filteredTehsils = Object.values(district.tehsils).filter(tehsil => 
                         selectedClassification === 'All' || tehsil.ruralUrban === selectedClassification
                     );
 
-                    // Only show district in the sidebar if it has tehsils matching the filter
                     if (filteredTehsils.length > 0) {
                         populateDistrictList(district, index);
                         filteredTehsils.forEach(tehsil => {
@@ -565,17 +650,17 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
                 updateOverviewPanel();
 
                 if (selectedDistrict === 'All') {
-                    map.flyTo([27.5, 68.5], 7);
+                    map.flyTo([27.5, 68.5], 7, { duration: 1 });
                 } else {
-                    const bounds = Object.values(allProcessedData[selectedDistrict].tehsils)
-                        .map(t => t.coords).filter(Boolean);
-                    if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+                    const districtData = allData[selectedDistrict];
+                    if (districtData) {
+                        const bounds = Object.values(districtData.tehsils).map(t => t.coords).filter(Boolean);
+                        if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+                    }
                 }
             }
-
-            // MODIFICATION: Tehsil markers now use different icons
+            
             function createTehsilMarker(tehsil, districtColor) {
-                // Choose icon based on Rural/Urban status
                 const iconClass = tehsil.ruralUrban === 'Urban' ? 'fa-city' : 'fa-tree';
                 const iconHtml = `<i class="fa-solid ${iconClass}" style="font-size: 28px; color: ${districtColor}; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></i>`;
                 
@@ -587,34 +672,29 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
                 });
                 const marker = L.marker(tehsil.coords, { icon: tehsilIcon }).addTo(layers.tehsils);
                 marker.bindPopup(() => createTehsilPopupContent(tehsil, districtColor), { className: 'custom-popup', offset: [0, -15] });
-                marker.on('click', () => highlightDistrict(tehsil.district));
+                marker.on('click', () => highlightDistrict(tehsil.district, false));
             }
-
-            // MODIFICATION: Popup content now includes Rural/Urban status
+            
             function createTehsilPopupContent(tehsil, color) {
                 const trainersHtml = tehsil.trainers.map(t => `
                     <div class="trainer-entry">
                         <span class="trainer-name">${t.name}</span>
-                        <div class="trainer-details">
-                            <i class="fa-solid fa-phone"></i><span>${t.phone}</span>
-                        </div>
+                        <div class="trainer-details"><i class="fa-solid fa-phone"></i>${t.phone}</div>
                     </div>`).join('');
                 
-                const totalDeployed = tehsil.totalTrainers > 0 ? tehsil.totalTrainers : tehsil.contracted;
                 const iconClass = tehsil.ruralUrban === 'Urban' ? 'fa-city' : 'fa-tree';
-
                 return `
                     <div class="tooltip-header">
                         <div class="district">${tehsil.district} &mdash; <i class="fa-solid ${iconClass}"></i> ${tehsil.ruralUrban}</div>
                         <h3 class="name" style="color:${color};">${tehsil.name}</h3>
                     </div>
                     <div class="tooltip-summary">
-                        <div class="stat-block"><div class="stat-value">${totalDeployed}</div><div class="stat-label">Deployed ASPCs</div></div>
+                        <div class="stat-block"><div class="stat-value">${tehsil.deployed} / ${tehsil.needed}</div><div class="stat-label">Deployed ASPCs</div></div>
                     </div>
-                    <div class="tooltip-body"><h4>ASPCs Details</h4>${trainersHtml}</div>`;
+                    <div class="tooltip-body"><h4>ASPC Details</h4>${trainersHtml}</div>`;
             }
 
-            function highlightDistrict(districtName) {
+            function highlightDistrict(districtName, shouldFlyTo) {
                 document.querySelectorAll('.district-item').forEach(item => {
                     item.classList.remove('active');
                     item.style.removeProperty('--district-active-color');
@@ -622,7 +702,7 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
                 layers.lines.clearLayers();
                 
                 const listItem = document.querySelector(`.district-item[data-district-name="${districtName}"]`);
-                const districtData = allProcessedData[districtName];
+                const districtData = allData[districtName];
                 if (!districtData) return;
 
                 if (listItem) {
@@ -631,19 +711,20 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
                     listItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
 
-                const tehsilsWithCoords = Object.values(districtData.tehsils).filter(t => t.coords);
-                if (tehsilsWithCoords.length > 0) {
-                    const districtCenter = tehsilsWithCoords[0].coords;
-                    tehsilsWithCoords.forEach(tehsil => L.polyline([districtCenter, tehsil.coords], { color: districtData.color, weight: 2, opacity: 0.7, dashArray: '5, 10' }).addTo(layers.lines));
+                if (shouldFlyTo) {
+                    const bounds = Object.values(districtData.tehsils).map(t => t.coords).filter(Boolean);
+                    if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50] });
                 }
-                
+
                 districtFilter.value = districtName;
             }
 
             function populateDistrictList(district, index) {
-                const summary = districtSummaries[district.name] || { headcount: 0, contracted: 0, totalTrainers: 0 };
-                const progress = summary.totalTrainers > 0 ? (summary.contracted / summary.totalTrainers) * 100 : 0;
-
+                const summary = districtSummaries[district.name];
+                if (!summary) return;
+                
+                const progress = summary.needed > 0 ? (summary.deployed / summary.needed) * 100 : 0;
+                
                 const item = document.createElement('div');
                 item.className = 'district-item';
                 item.dataset.districtName = district.name;
@@ -659,7 +740,7 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
                     </div>
                     <div class="deployment-stats">
                         <div class="stat-block">
-                            <div class="stat-value">${summary.contracted}</div>
+                            <div class="stat-value">${summary.deployed} <span class="stat-value-small">/ ${summary.needed}</span></div>
                             <div class="stat-label">Total Deployed</div>
                         </div>
                     </div>
@@ -668,16 +749,14 @@ Umer Kot,Umer Kot,Urban,"29,453",Zara Amjad,3322648430,ASPC,,Error: FSc without 
                     </div>
                 `;
 
-                item.addEventListener('click', () => {
-                    highlightDistrict(district.name);
-                    const bounds = Object.values(district.tehsils).map(t => t.coords).filter(Boolean);
-                    if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50] });
-                });
+                item.addEventListener('click', () => highlightDistrict(district.name, true));
                 districtListContainer.appendChild(item);
             }
 
             // --- INITIALIZATION ---
-            if (loadData()) initializeDashboard();
+            if (processAndSummarizeData()) {
+                initializeDashboard();
+            }
         });
     </script>
 </body>

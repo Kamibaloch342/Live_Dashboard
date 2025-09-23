@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Phase 2 | GRM Deck v2</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --brand-color: #4f46e5;
+            --brand-light: #e0e7ff;
+            --color-resolved: #10b981;
+            --color-inprogress: #f59e0b;
+            --color-overdue: #ef4444;
+            --color-acknowledged: #3b82f6;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            background-image: linear-gradient(175deg, var(--bg-color) 0%, #dbe7f2 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        #sidebar { transition: transform 0.3s ease-in-out; transform: translateX(-100%); }
+        #sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        #page-container { transition: margin-left 0.3s ease-in-out; }
+        body.sidebar-open #sidebar { transform: translateX(0); }
+        body.sidebar-open #sidebar-overlay { display: block; }
+        @media (min-width: 1024px) { body.sidebar-open #page-container { margin-left: 16rem; } }
+
+        .grm-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: auto repeat(10, minmax(0, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            height: 100vh;
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            min-height: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card:hover { box-shadow: 0 12px 30px rgba(0,0,0,0.12); transform: translateY(-5px); }
+        
+        /* IMPRESSIVE GRID PLACEMENT */
+        .header { grid-column: 1 / -1; grid-row: 1; }
+        .kpi-total, .kpi-open, .kpi-resolved, .kpi-overdue, .kpi-avg-time, .kpi-urgent { grid-column: span 2; grid-row: 2; }
+        .performance-chart-card { grid-column: 1 / 8; grid-row: 3 / 7; }
+        .category-chart-card { grid-column: 8 / 13; grid-row: 3 / 7; }
+        .live-feed-card { grid-column: 1 / 6; grid-row: 7 / 12; }
+        .channel-chart-card { grid-column: 6 / 10; grid-row: 7 / 10; }
+        .status-chart-card { grid-column: 10 / 13; grid-row: 7 / 10; }
+        .overdue-table-card { grid-column: 6 / 13; grid-row: 10 / 12; }
+
+        .chart-container, .table-container { flex-grow: 1; position: relative; min-height: 0; }
+        .table-container { overflow-y: auto; }
+        .table-container::-webkit-scrollbar { width: 6px; }
+        .table-container::-webkit-scrollbar-track { background: transparent; }
+        .table-container::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+
+        /* LIVE NOTIFICATION STYLES */
+        #notification-popup {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 9999;
+            transform: translateX(calc(100% + 1.5rem));
+            opacity: 0;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s;
+            max-width: 400px;
+        }
+        #notification-popup.show { transform: translateX(0); opacity: 1; }
+        
+        /* LIVE FEED STYLES */
+        .live-feed-item { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 1280px) {
+            .grm-grid { display: flex; flex-direction: column; height: auto; }
+            .card:hover { transform: none; }
+        }
+    </style>
+</head>
+<body class="sidebar-open">
+    <aside id="sidebar" class="fixed top-0 left-0 z-[60] w-64 h-full bg-white shadow-xl">
+        <div class="p-4 border-b"><h2 class="text-xl font-bold text-indigo-600">Dashboard Decks</h2></div>
+        <nav class="p-4">
+            <ul class="space-y-2">
+                <li>
+                    <a href="your_status_deck.html" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100">
+                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <span class="ml-3">DFLT Status Deck</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg bg-indigo-100 text-indigo-700 font-semibold">
+                       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        <span class="ml-3">GRM Deck</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden"></div>
+
+    <div id="page-container">
+        <div class="grm-grid" id="dashboard-content">
+            <header class="card header flex flex-col xl:flex-row items-center justify-between gap-4 p-4">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle" class="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <h1 class="text-xl font-extrabold text-gray-900">Grievance Redressal Mechanism Deck</h1>
+                </div>
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <input id="searchInput" type="text" placeholder="Search by ID or CNIC..." class="py-1 px-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm">
+                    <select id="trainerFilter" class="py-1 px-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm"><option value="All">All Trainers</option></select>
+                    <select id="channelFilter" class="py-1 px-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm"><option value="All">All Channels</option></select>
+                    <select id="categoryFilter" class="py-1 px-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm"><option value="All">All Categories</option></select>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <p id="currentTime" class="font-bold text-gray-900 text-lg"></p>
+                    <p id="currentDate" class="text-xs text-gray-600"></p>
+                </div>
+            </header>
+
+            <div class="card kpi-total justify-center"><h3 class="text-sm font-semibold text-gray-500">Total Grievances</h3><p id="kpiTotal" class="text-4xl font-black text-indigo-600">0</p></div>
+            <div class="card kpi-open justify-center"><h3 class="text-sm font-semibold text-gray-500">Open</h3><p id="kpiOpen" class="text-4xl font-black" style="color: var(--color-inprogress);">0</p></div>
+            <div class="card kpi-resolved justify-center"><h3 class="text-sm font-semibold text-gray-500">Resolved</h3><p id="kpiResolved" class="text-4xl font-black" style="color: var(--color-resolved);">0</p></div>
+            <div class="card kpi-overdue justify-center"><h3 class="text-sm font-semibold text-gray-500">Overdue</h3><p id="kpiOverdue" class="text-4xl font-black" style="color: var(--color-overdue);">0</p></div>
+            <div class="card kpi-avg-time justify-center"><h3 class="text-sm font-semibold text-gray-500">Avg. Resolution</h3><p id="kpiAvgTime" class="text-4xl font-black text-gray-700">0<span class="text-2xl"> Days</span></p></div>
+            <div class="card kpi-urgent justify-center"><h3 class="text-sm font-semibold text-gray-500">Urgent Cases</h3><p id="kpiUrgent" class="text-4xl font-black" style="color: var(--color-overdue);">0</p></div>
+
+            <div class="card performance-chart-card">
+                <h3 class="text-md font-bold text-gray-800 flex-shrink-0">Daily Performance (Last 30 Days)</h3>
+                <div class="chart-container"><canvas id="performanceChart"></canvas></div>
+            </div>
+            <div class="card category-chart-card">
+                <h3 class="text-md font-bold text-gray-800 flex-shrink-0">Grievances by Category</h3>
+                <div class="chart-container"><canvas id="categoryChart"></canvas></div>
+            </div>
+
+            <div class="card live-feed-card">
+                <h3 class="text-md font-bold text-gray-800 flex-shrink-0 mb-4">Live Grievance Feed</h3>
+                <div id="liveFeedContainer" class="table-container space-y-4 pr-2"></div>
+            </div>
+            <div class="card channel-chart-card">
+                <h3 class="text-md font-bold text-gray-800 flex-shrink-0">By Channel</h3>
+                <div class="chart-container"><canvas id="channelChart"></canvas></div>
+            </div>
+            <div class="card status-chart-card">
+                <h3 class="text-md font-bold text-gray-800 flex-shrink-0">Status Breakdown</h3>
+                <div class="chart-container"><canvas id="statusChart"></canvas></div>
+            </div>
+            <div class="card overdue-table-card bg-red-50 border-red-200">
+                <h3 class="text-md font-bold text-red-800 flex-shrink-0 mb-2">Overdue Grievances</h3>
+                <div class="table-container">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-red-700 uppercase bg-red-100 sticky top-0"><tr><th class="px-3 py-2">ID</th><th class="px-3 py-2">Days Over</th><th class="px-3 py-2">Assigned To</th></tr></thead>
+                        <tbody id="overdueGrievancesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification-popup">
+        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
+        </div>
+        <div>
+            <h4 id="notification-title" class="font-bold text-gray-800">New Grievance Lodged!</h4>
+            <p id="notification-text" class="text-sm text-gray-600">A new complaint has been registered.</p>
+        </div>
+    </div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const sidebarToggle = document.getElementById('sidebar-toggle'), sidebarOverlay = document.getElementById('sidebar-overlay');
+        const toggleSidebar = () => document.body.classList.toggle('sidebar-open');
+        sidebarToggle.addEventListener('click', (e) => { e.stopPropagation(); toggleSidebar(); });
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        const updateTime = () => {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Karachi' });
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'Asia/Karachi' });
+        };
+        updateTime(); setInterval(updateTime, 1000);
+
+        Chart.defaults.font.family = "'Montserrat', sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        // --- ENHANCED Dummy Data Generation ---
+        const provinces = ['Sindh', 'Punjab', 'Khyber Pakhtunkhwa', 'Balochistan'];
+        const categories = ['Service Delivery', 'Logistics', 'Financial Inclusion', 'Exclusion', 'Misconduct', 'Mahnoor Arshad'];
+        const statuses = ['Open', 'In Progress', 'Resolved', 'Escalated'];
+        const channels = ['Phone Call', 'Complaint Box', 'SDPI App', 'Email'];
+        const trainers = ['Ayesha & Fatima', 'Sana & Zainab', 'Nida & Bisma', 'Aliya & Maria'];
+        const comments = [
+            "Training started 30 minutes late, causing inconvenience.", "No clean drinking water was available at the venue.",
+            "The trainer was excellent and explained everything clearly.", "My biometric verification failed multiple times.",
+            "I was not included in the session despite being eligible.", "Requesting information about the next phase of training.",
+            "The complaint box was not easily accessible.", "The mobile app is very user-friendly for logging issues."
+        ];
+
+        const getRandomDate = (daysAgo) => { const d = new Date(); d.setDate(d.getDate() - daysAgo); return d; };
+
+        let allGrievances = Array.from({ length: 250 }, (_, i) => {
+            const lodgedDate = getRandomDate(Math.floor(Math.random() * 90));
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            const resolutionDays = status === 'Resolved' ? Math.floor(Math.random() * 28) + 1 : null;
+            const daysOpen = Math.floor((new Date() - lodgedDate) / (1000 * 60 * 60 * 24));
+            const category = categories[Math.floor(Math.random() * categories.length)];
+            const trainerPair = trainers[Math.floor(Math.random() * trainers.length)];
+
+            return {
+                id: `GRM-${8800 + i}`,
+                lodgedDate: lodgedDate,
+                province: provinces[Math.floor(Math.random() * provinces.length)],
+                category: category,
+                priority: (category === 'SEAH' || category === 'Misconduct') ? 'Urgent' : 'Routine',
+                status: status,
+                channel: channels[Math.floor(Math.random() * channels.length)],
+                trainer: trainerPair,
+                beneficiaryCNIC: `${4210100000000 + i}`,
+                comment: comments[Math.floor(Math.random() * comments.length)],
+                resolutionDays: resolutionDays,
+                isOverdue: status !== 'Resolved' && daysOpen > 30,
+                daysOverdue: status !== 'Resolved' && daysOpen > 30 ? daysOpen - 30 : 0,
+                assignedTo: trainerPair.split(' & ')[0] // Assign to first trainer in pair
+            };
+        });
+        
+        // --- Chart Instances ---
+        let categoryChart, statusChart, channelChart, performanceChart;
+        
+        // --- Populate Filters ---
+        ['categoryFilter', 'channelFilter', 'trainerFilter'].forEach(id => {
+            const select = document.getElementById(id);
+            const key = id.replace('Filter', '');
+            const options = [...new Set(allGrievances.map(g => g[key]))];
+            options.forEach(opt => select.add(new Option(opt, opt)));
+        });
+
+        const updateDashboard = () => {
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const trainerVal = document.getElementById('trainerFilter').value;
+            const channelVal = document.getElementById('channelFilter').value;
+            const categoryVal = document.getElementById('categoryFilter').value;
+
+            const filteredData = allGrievances.filter(g => 
+                (trainerVal === 'All' || g.trainer === trainerVal) &&
+                (channelVal === 'All' || g.channel === channelVal) &&
+                (categoryVal === 'All' || g.category === categoryVal) &&
+                (g.id.toLowerCase().includes(searchVal) || g.beneficiaryCNIC.includes(searchVal))
+            );
+            
+            updateKPIs(filteredData);
+            updateCharts(filteredData);
+            updateOverdueTable(filteredData);
+        };
+
+        const animateValue = (el, end) => {
+            let start = parseInt(el.textContent.replace(/,/g, '') || '0');
+            if (start === end) return;
+            const duration = 1200;
+            const startTime = performance.now();
+            const step = (currentTime) => {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                el.textContent = Math.floor(progress * (end - start) + start).toLocaleString();
+                if (progress < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        };
+        
+        const updateKPIs = (data) => {
+            animateValue(document.getElementById('kpiTotal'), data.length);
+            animateValue(document.getElementById('kpiOpen'), data.filter(g => g.status !== 'Resolved').length);
+            animateValue(document.getElementById('kpiResolved'), data.filter(g => g.status === 'Resolved').length);
+            animateValue(document.getElementById('kpiOverdue'), data.filter(g => g.isOverdue).length);
+            animateValue(document.getElementById('kpiUrgent'), data.filter(g => g.priority === 'Urgent').length);
+            const resolvedWithTime = data.filter(g => g.resolutionDays);
+            const avgTime = resolvedWithTime.length > 0 ? (resolvedWithTime.reduce((sum, g) => sum + g.resolutionDays, 0) / resolvedWithTime.length) : 0;
+            document.getElementById('kpiAvgTime').innerHTML = `${avgTime.toFixed(1)}<span class="text-2xl"> Days</span>`;
+        };
+
+        const updateCharts = (data) => {
+            // Category Chart (Horizontal Bar)
+            const categoryCounts = categories.reduce((acc, cat) => ({...acc, [cat]: data.filter(g => g.category === cat).length}), {});
+            if (categoryChart) categoryChart.destroy();
+            categoryChart = new Chart(document.getElementById('categoryChart'), {
+                type: 'bar', data: { labels: Object.keys(categoryCounts), datasets: [{ data: Object.values(categoryCounts), backgroundColor: 'rgba(79, 70, 229, 0.7)', borderRadius: 8 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+            });
+
+            // Status Chart (Donut)
+            const statusCounts = statuses.reduce((acc, stat) => ({...acc, [stat]: data.filter(g => g.status === stat).length}), {});
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut', data: { labels: Object.keys(statusCounts), datasets: [{ data: Object.values(statusCounts), backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'] }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+            });
+            
+            // Channel Chart (Pie)
+            const channelCounts = channels.reduce((acc, chan) => ({...acc, [chan]: data.filter(g => g.channel === chan).length}), {});
+            if (channelChart) channelChart.destroy();
+            channelChart = new Chart(document.getElementById('channelChart'), {
+                type: 'pie', data: { labels: Object.keys(channelCounts), datasets: [{ data: Object.values(channelCounts), backgroundColor: ['#38bdf8', '#fbbf24', '#4ade80', '#c084fc'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels:{padding: 15} } } }
+            });
+            
+            // Performance Line Chart
+            const last30Days = [...Array(30)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0]; }).reverse();
+            const newGrievances = last30Days.map(day => allGrievances.filter(g => g.lodgedDate.toISOString().split('T')[0] === day).length);
+            const resolvedGrievances = last30Days.map(day => allGrievances.filter(g => g.resolutionDays && new Date(g.lodgedDate.getTime() + g.resolutionDays*86400000).toISOString().split('T')[0] === day).length);
+            if(performanceChart) performanceChart.destroy();
+            performanceChart = new Chart(document.getElementById('performanceChart'), {
+                type: 'line', data: { labels: last30Days, datasets: [
+                    { label: 'New', data: newGrievances, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4 },
+                    { label: 'Resolved', data: resolvedGrievances, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 }
+                ]},
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' } }, y: { beginAtZero: true } }, plugins: { legend: { position: 'top' } } }
+            });
+        };
+        
+        const updateOverdueTable = (data) => {
+            const overdueTableBody = document.getElementById('overdueGrievancesTable');
+            const overdueGrievances = data.filter(g => g.isOverdue).sort((a,b) => b.daysOverdue - a.daysOverdue);
+            overdueTableBody.innerHTML = overdueGrievances.length === 0 
+                ? `<tr><td colspan="3" class="p-4 text-center text-gray-500">No overdue cases.</td></tr>`
+                : overdueGrievances.map(g => `<tr class="border-b border-red-200 hover:bg-red-100"><td class="px-3 py-2 font-semibold text-red-700">${g.id}</td><td class="px-3 py-2 text-red-700 font-bold">${g.daysOverdue}</td><td class="px-3 py-2 text-red-600">${g.assignedTo}</td></tr>`).join('');
+        };
+        
+        const updateLiveFeed = () => {
+            const feedContainer = document.getElementById('liveFeedContainer');
+            const latest = [...allGrievances].sort((a, b) => b.lodgedDate - a.lodgedDate).slice(0, 5);
+            feedContainer.innerHTML = latest.map(g => `
+                <div class="live-feed-item p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+                        <span class="font-semibold">${g.id} - ${g.province}</span>
+                        <span>${g.lodgedDate.toLocaleDateString('en-GB')}</span>
+                    </div>
+                    <p class="text-sm text-gray-800 italic">"${g.comment}"</p>
+                    <div class="text-xs text-indigo-600 mt-2 font-medium">${g.category} via ${g.channel}</div>
+                </div>
+            `).join('');
+        };
+
+        const showNotification = () => {
+            const popup = document.getElementById('notification-popup');
+            const randomGrievance = allGrievances[Math.floor(Math.random() * allGrievances.length)];
+            document.getElementById('notification-title').textContent = `New ${randomGrievance.category} Grievance!`;
+            document.getElementById('notification-text').textContent = `From ${randomGrievance.province} via ${randomGrievance.channel}. ID: ${randomGrievance.id}`;
+            popup.classList.add('show');
+            setTimeout(() => popup.classList.remove('show'), 5000);
+        };
+        
+        // --- Event Listeners ---
+        ['searchInput', 'trainerFilter', 'channelFilter', 'categoryFilter'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateDashboard);
+        });
+
+        // --- Initial Load & Intervals ---
+        updateDashboard();
+        updateLiveFeed();
+        // Trigger a random notification every 15 seconds
+        setInterval(() => { if (Math.random() > 0.6) showNotification(); }, 15000);
+    });
+</script>
+</body>
+</html>

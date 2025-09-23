@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFLT Phase 2 | GRM Management Log</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --brand-color: #4f46e5;
+            --color-resolved: #10b981;
+            --color-inprogress: #f59e0b;
+            --color-overdue: #ef4444;
+            --color-open: #3b82f6;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden; /* Prevent body scroll, table will scroll */
+        }
+        
+        #sidebar { transition: transform 0.3s ease-in-out; transform: translateX(-100%); }
+        #sidebar-overlay { transition: opacity 0.3s ease-in-out; }
+        #page-container { transition: margin-left 0.3s ease-in-out; height: 100vh; display: flex; flex-direction: column; }
+        body.sidebar-open #sidebar { transform: translateX(0); }
+        body.sidebar-open #sidebar-overlay { display: block; }
+        @media (min-width: 1024px) { body.sidebar-open #page-container { margin-left: 16rem; } }
+
+        /* Main layout for the log page */
+        .log-container {
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            height: 100%;
+            gap: 1rem;
+        }
+
+        /* Styling for the spreadsheet-like table */
+        .table-wrapper {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            flex-grow: 1;
+            overflow: hidden; /* Hide outer scrollbars */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .table-scroll-container {
+            flex-grow: 1;
+            overflow: auto; /* This is where the scrolling happens */
+        }
+        .table-scroll-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .table-scroll-container::-webkit-scrollbar-track { background: #f1f5f9; }
+        .table-scroll-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        
+        #grm-log-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #grm-log-table thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8fafc;
+            border-bottom: 2px solid var(--border-color);
+            z-index: 10;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        #grm-log-table tbody td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        #grm-log-table tbody tr:hover { background-color: #f1f5f9; }
+
+        /* Status Tag Styles */
+        .status-tag {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+        
+        /* Checkbox Styles */
+        .resolve-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            accent-color: var(--brand-color);
+        }
+
+        /* Notification Popup */
+        #action-notification {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--text-primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            z-index: 10000;
+        }
+        #action-notification.show {
+            bottom: 1.5rem;
+        }
+
+    </style>
+</head>
+<body class="sidebar-open">
+    <aside id="sidebar" class="fixed top-0 left-0 z-[60] w-64 h-full bg-white shadow-xl">
+        <div class="p-4 border-b"><h2 class="text-xl font-bold text-indigo-600">Dashboard Decks</h2></div>
+        <nav class="p-4">
+            <ul class="space-y-2">
+                <li><a href="your_status_deck.html" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span class="ml-3">DFLT Status Deck</span></a></li>
+                <li><a href="GRM_Deck_v2.html" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg><span class="ml-3">GRM Analytics Deck</span></a></li>
+                <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg bg-indigo-100 text-indigo-700 font-semibold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg><span class="ml-3">GRM Management Log</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden"></div>
+
+    <div id="page-container">
+        <div class="log-container">
+            <div class="p-4 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle" class="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+                    <h1 class="text-xl font-extrabold text-gray-900">Grievance Management Log</h1>
+                </div>
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <input id="searchInput" type="text" placeholder="Search ID, CNIC, Comment..." class="py-1.5 px-3 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-48">
+                    <select id="statusFilter" class="py-1.5 px-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm"><option value="All">All Statuses</option></select>
+                    <select id="priorityFilter" class="py-1.5 px-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm"><option value="All">All Priorities</option></select>
+                    <select id="assignedToFilter" class="py-1.5 px-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm"><option value="All">All Staff</option></select>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <div class="table-scroll-container">
+                    <table id="grm-log-table">
+                        <thead>
+                            <tr>
+                                <th class="w-16">Resolved</th>
+                                <th>P</th>
+                                <th>Grievance ID</th>
+                                <th>Date Lodged</th>
+                                <th>Complainant (CNIC)</th>
+                                <th>Location</th>
+                                <th>Category</th>
+                                <th class="min-w-[300px]">Details</th>
+                                <th>Assigned To</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grm-log-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="action-notification"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const sidebarToggle = document.getElementById('sidebar-toggle'), sidebarOverlay = document.getElementById('sidebar-overlay');
+    const toggleSidebar = () => document.body.classList.toggle('sidebar-open');
+    sidebarToggle.addEventListener('click', (e) => { e.stopPropagation(); toggleSidebar(); });
+    sidebarOverlay.addEventListener('click', toggleSidebar);
+
+    // --- DATA GENERATION (from previous version, slightly adapted) ---
+    const provinces = ['Sindh', 'Punjab', 'KP', 'Balochistan'];
+    const categories = ['Service Delivery', 'Logistics', 'Financial Inclusion', 'Misconduct', 'SEAH'];
+    const statuses = ['Open', 'In Progress', 'Resolved', 'Escalated'];
+    const staff = ['Aisha Khan', 'Bilal Ahmed', 'Fatima Ali', 'Kamran Shah', 'Sana Mir'];
+    const comments = ["Training started late.", "No clean drinking water.", "Trainer was excellent.", "Biometric verification failed.", "Complaint box was not accessible."];
+    const getRandomDate = (daysAgo) => { const d = new Date(); d.setDate(d.getDate() - daysAgo); return d; };
+    
+    let allGrievances = Array.from({ length: 150 }, (_, i) => {
+        const lodgedDate = getRandomDate(Math.floor(Math.random() * 60));
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        const category = categories[Math.floor(Math.random() * categories.length)];
+        const daysOpen = Math.floor((new Date() - lodgedDate) / (1000 * 60 * 60 * 24));
+        const dueDate = new Date(lodgedDate);
+        dueDate.setDate(lodgedDate.getDate() + 7); // 7-day resolution target
+        
+        return {
+            id: `GRM-${8800 + i}`,
+            lodgedDate: lodgedDate,
+            province: provinces[Math.floor(Math.random() * provinces.length)],
+            district: 'District ' + (i % 5 + 1),
+            category: category,
+            priority: (category === 'SEAH' || category === 'Misconduct') ? 'Urgent' : 'Routine',
+            status: status,
+            assignedTo: staff[Math.floor(Math.random() * staff.length)],
+            beneficiaryCNIC: `${4210100000000 + i}`,
+            comment: comments[Math.floor(Math.random() * comments.length)],
+            dueDate: dueDate,
+            isOverdue: status !== 'Resolved' && new Date() > dueDate
+        };
+    });
+
+    const tableBody = document.getElementById('grm-log-table-body');
+
+    // --- POPULATE FILTERS ---
+    ['status', 'priority', 'assignedTo'].forEach(key => {
+        const select = document.getElementById(`${key}Filter`);
+        const options = [...new Set(allGrievances.map(g => g[key]))];
+        // Special handling for Status filter
+        if (key === 'status') {
+             select.innerHTML = `<option value="All">All Statuses</option>
+                                 <option value="Non-Resolved">Non-Resolved</option>`;
+        }
+        options.forEach(opt => select.add(new Option(opt, opt)));
+    });
+
+    // --- MAIN RENDER FUNCTION ---
+    const renderTable = () => {
+        const searchVal = document.getElementById('searchInput').value.toLowerCase();
+        const statusVal = document.getElementById('statusFilter').value;
+        const priorityVal = document.getElementById('priorityFilter').value;
+        const assignedToVal = document.getElementById('assignedToFilter').value;
+
+        const filteredData = allGrievances.filter(g => 
+            (statusVal === 'All' || (statusVal === 'Non-Resolved' ? g.status !== 'Resolved' : g.status === statusVal)) &&
+            (priorityVal === 'All' || g.priority === priorityVal) &&
+            (assignedToVal === 'All' || g.assignedTo === assignedToVal) &&
+            (g.id.toLowerCase().includes(searchVal) || g.beneficiaryCNIC.includes(searchVal) || g.comment.toLowerCase().includes(searchVal))
+        ).sort((a,b) => a.lodgedDate - b.lodgedDate);
+
+        const statusStyles = {
+            'Resolved': 'bg-green-100 text-green-800', 'In Progress': 'bg-yellow-100 text-yellow-800',
+            'Open': 'bg-blue-100 text-blue-800', 'Escalated': 'bg-purple-100 text-purple-800'
+        };
+
+        tableBody.innerHTML = filteredData.map(g => `
+            <tr data-id="${g.id}" class="${g.isOverdue ? 'bg-red-50' : ''}">
+                <td class="text-center"><input type="checkbox" class="resolve-checkbox" ${g.status === 'Resolved' ? 'checked' : ''}></td>
+                <td>${g.priority === 'Urgent' ? '<span title="Urgent" class="text-red-500 font-bold text-lg">❗️</span>' : ''}</td>
+                <td class="font-semibold text-gray-700">${g.id}</td>
+                <td>${g.lodgedDate.toLocaleDateString('en-CA')}</td>
+                <td>${g.beneficiaryCNIC}</td>
+                <td>${g.province}, ${g.district}</td>
+                <td>${g.category}</td>
+                <td class="text-gray-600 truncate max-w-sm" title="${g.comment}">${g.comment}</td>
+                <td>${g.assignedTo}</td>
+                <td><span class="status-tag ${statusStyles[g.status]}">${g.status}</span></td>
+                <td class="${g.isOverdue ? 'text-red-600 font-bold' : ''}">${g.dueDate.toLocaleDateString('en-CA')}</td>
+            </tr>
+        `).join('');
+    };
+
+    // --- INTERACTIVITY ---
+    tableBody.addEventListener('change', (e) => {
+        if (e.target.classList.contains('resolve-checkbox')) {
+            const row = e.target.closest('tr');
+            const grievanceId = row.dataset.id;
+            const grievance = allGrievances.find(g => g.id === grievanceId);
+            
+            if (grievance) {
+                grievance.status = e.target.checked ? 'Resolved' : 'Open';
+                // Recalculate overdue status on change
+                grievance.isOverdue = grievance.status !== 'Resolved' && new Date() > grievance.dueDate;
+                
+                showActionNotification(`${grievance.id} marked as ${grievance.status}`);
+                renderTable(); // Re-render to reflect the change immediately
+            }
+        }
+    });
+
+    // --- Action Notification ---
+    let notificationTimer;
+    const showActionNotification = (message) => {
+        const notification = document.getElementById('action-notification');
+        notification.textContent = message;
+        notification.classList.add('show');
+        clearTimeout(notificationTimer);
+        notificationTimer = setTimeout(() => {
+            notification.classList.remove('show');
+        }, 3000);
+    };
+
+    // --- EVENT LISTENERS FOR FILTERS ---
+    ['searchInput', 'statusFilter', 'priorityFilter', 'assignedToFilter'].forEach(id => {
+        document.getElementById(id).addEventListener('input', renderTable);
+    });
+    
+    // Initial Load
+    renderTable();
+});
+</script>
+</body>
+</html>

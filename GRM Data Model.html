@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grievance Case View | GRM-01283</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* --- General Setup --- */
+        :root {
+            --bg-color: #f4f7fa;
+            --pane-bg: #ffffff;
+            --sidebar-bg: #f8f9fa;
+            --text-color: #34495e;
+            --heading-color: #2c3e50;
+            --primary-color: #3498db;
+            --border-color: #eaecf0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            
+            --status-resolved-bg: #e8f5e9;
+            --status-resolved-text: #2e7d32;
+            --status-pending-bg: #fff3e0;
+            --status-pending-text: #ef6c00;
+            --status-escalated-bg: #fdeaea;
+            --status-escalated-text: #c62828;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Main Container Layout --- */
+        .case-container {
+            display: flex;
+            max-width: 1400px;
+            margin: 30px auto;
+            background: var(--pane-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        /* --- Left Sidebar (Sticky) --- */
+        .case-sidebar {
+            flex: 0 0 380px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .case-header .case-id {
+            font-size: 24px;
+            color: var(--heading-color);
+            margin: 0 0 10px 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+        .status-badge.status-escalated { background-color: var(--status-escalated-bg); color: var(--status-escalated-text); }
+        .status-badge.status-pending { background-color: var(--status-pending-bg); color: var(--status-pending-text); }
+        .status-badge.status-resolved { background-color: var(--status-resolved-bg); color: var(--status-resolved-text); }
+
+        .case-actions {
+            margin: 25px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #bdc3c7;
+            background: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .action-btn.primary { background-color: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .action-btn.primary:hover { background-color: #2980b9; }
+
+        .details-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .details-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: var(--heading-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .details-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+        }
+        .details-card li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed #ecf0f1;
+        }
+        .details-card li:last-child { border: none; }
+        .details-card li strong { color: #7f8c8d; }
+        .priority-high { color: var(--status-escalated-text); font-weight: 700; }
+        .confidential-text { text-align: center; color: #7f8c8d; font-size: 14px; }
+
+        /* --- Right Main Content (Scrollable) --- */
+        .case-main {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .case-main h2 {
+            margin: 0 0 30px 0;
+            font-size: 22px;
+            color: var(--heading-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* Timeline Styling */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+            border-left: 3px solid var(--border-color);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-icon {
+            position: absolute;
+            left: -60px;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-size: 16px;
+            border: 3px solid var(--pane-bg);
+            box-shadow: 0 0 0 3px var(--border-color);
+        }
+        .icon-new { background: var(--primary-color); }
+        .icon-system { background: #95a5a6; }
+        .icon-escalate { background: #e74c3c; }
+        .icon-note { background: #f39c12; }
+
+        .timeline-content {
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .timeline-header h4 { margin: 0; font-size: 16px; color: var(--heading-color); }
+        .timestamp { font-size: 12px; color: #7f8c8d; }
+        .timeline-content p { margin: 0; }
+        .complaint-description {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .case-container {
+                flex-direction: column;
+                height: auto;
+                margin: 15px;
+            }
+            .case-sidebar {
+                flex: 0 0 auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="case-container">
+    <aside class="case-sidebar">
+        <div class="sidebar-content">
+            <div class="case-header">
+                <h1 class="case-id">Case ID: GRM-01283</h1>
+                <span class="status-badge status-escalated">Escalated - Central</span>
+            </div>
+
+            <div class="case-actions">
+                <button class="action-btn primary"><i class="fas fa-edit"></i> Update Status</button>
+                <button class="action-btn"><i class="fas fa-plus"></i> Add Note</button>
+            </div>
+
+            <div class="details-card">
+                <h3><i class="fas fa-info-circle"></i> Key Details</h3>
+                <ul>
+                    <li><strong>Priority:</strong> <span class="priority-high">HIGH (SEAH)</span></li>
+                    <li><strong>Category:</strong> Discriminatory Actions</li>
+                    <li><strong>Channel:</strong> DFLT App</li>
+                    <li><strong>Received:</strong> 19 Sep 2025, 11:21 AM</li>
+                    <li><strong>Assigned To:</strong> SDPI PSEA Committee</li>
+                    <li><strong>Age:</strong> 1 Day, 2 Hours</li>
+                </ul>
+            </div>
+
+            <div class="details-card">
+                <h3><i class="fas fa-link"></i> Linked Session</h3>
+                <ul>
+                    <li><strong>Session ID:</strong> PN-LHR-042</li>
+                    <li><strong>Province:</strong> Punjab</li>
+                    <li><strong>District:</strong> Lahore</li>
+                    <li><strong>Trainer:</strong> Anum Hassan</li>
+                    <li><strong>IC:</strong> Yasir Khan</li>
+                </ul>
+            </div>
+
+            <div class="details-card confidential">
+                <h3><i class="fas fa-user-shield"></i> Complainant Details</h3>
+                <p class="confidential-text">
+                    <i class="fas fa-lock"></i> Information is confidential and access is restricted.
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    <main class="case-main">
+        <h2>Case Activity Timeline</h2>
+        
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-icon icon-new">
+                    <i class="fas fa-flag"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <h4>Grievance Submitted via DFLT App</h4>
+                        <span class="timestamp">19 Sep 2025, 11:21 AM</span>
+                    </div>
+                    <p class="complaint-description">
+                        <strong>Original Complaint:</strong> "The trainer at the session made several inappropriate comments that were personally directed at me and made me feel extremely uncomfortable and harassed. I do not feel safe returning to the training center with this individual present. This is a serious issue and I request immediate action."
+                    </p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-icon icon-system">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <h4>Case Auto-Categorized & Flagged as High Priority</h4>
+                        <span class="timestamp">19 Sep 2025, 11:22 AM</span>
+                    </div>
+                    <p>System automatically detected keywords related to SEAH ("harassed", "unsafe"). Priority level set to HIGH and notification sent to the central GRM focal point.</p>
+                </div>
+            </div>
+
+             <div class="timeline-item">
+                <div class="timeline-icon icon-escalate">
+                    <i class="fas fa-arrow-alt-circle-up"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <h4>Case Escalated to Central Level</h4>
+                        <span class="timestamp">19 Sep 2025, 11:45 AM</span>
+                    </div>
+                    <p>
+                        <strong>User:</strong> Amna Khalid (GRM Manager) <br>
+                        <strong>Note:</strong> "Due to the SEAH nature of this complaint, bypassing field and provincial levels as per protocol. Assigning directly to the SDPI PSEA Committee for immediate and confidential investigation."
+                    </p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-icon icon-note">
+                    <i class="fas fa-comment"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <h4>Note Added</h4>
+                        <span class="timestamp">20 Sep 2025, 01:43 PM</span>
+                    </div>
+                    <p>
+                        <strong>User:</strong> Hina Jamshed (PSEA Committee) <br>
+                        <strong>Note:</strong> "Initial contact with the complainant is planned for 3:00 PM today via a secure, female-operated channel to ensure confidentiality and gather more details. The trainer in question has been temporarily suspended from training activities pending investigation."
+                    </p>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

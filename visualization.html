@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profitability Trend Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.1.0"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f4f7fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        .chart-container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+            width: 95%;
+            max-width: 1500px; /* Increased max-width for a bigger chart */
+            height: 75vh; /* Set a specific height */
+        }
+
+        header { text-align: center; margin-bottom: 2rem; }
+        header h1 { font-size: 2rem; color: #2c3e50; margin: 0; }
+        header p { font-size: 1.1rem; color: #7f8c8d; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <header>
+            <h1>Daily Performance: Profit, Spendings, and Margin Trend</h1>
+            <p>Bars show daily dollar amounts (left axis), the line shows profit margin % (right axis).</p>
+        </header>
+        <canvas id="comboChart"></canvas>
+    </div>
+
+    <script>
+        // Register the datalabels plugin
+        Chart.register(ChartDataLabels);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- UPDATED Hardcoded Data ---
+            const labels = [
+                '01-Sep', '02-Sep', '03-Sep', '04-Sep', '05-Sep', '06-Sep', '07-Sep', '08-Sep', '09-Sep', '10-Sep',
+                '11-Sep', '12-Sep', '13-Sep', '14-Sep', '15-Sep', '16-Sep', '17-Sep', '18-Sep', '19-Sep', '20-Sep',
+                '21-Sep', '22-Sep', '23-Sep', '24-Sep', '25-Sep', '26-Sep', '27-Sep', '28-Sep', '29-Sep', '30-Sep',
+                '01-Oct', '02-Oct'
+            ];
+            const earnings = [
+                3448.44, 8902.26, 8968.98, 6381.95, 5954.52, 5070.59, 3284.07, 6689.75, 8703.86, 9183.11,
+                8602.22, 4481.77, 3196.01, 5275.63, 22800.99, 30341.18, 35258.78, 32513.80, 22866.28, 13419.24,
+                5851.06, 10436.76, 14435.57, 18105.91, 12724.43, 6205.01, 3095.44, 3462.19, 8464.91, 11206.48,
+                10114.50, 3638.08
+            ];
+            const profits = [
+                588.24, 1578.44, 1427.83, 899.02, 1030.21, 866.46, 339.04, 799.20, 1532.56, 1697.63,
+                1101.76, 447.82, 331.07, 584.92, 3049.22, 4562.54, 5207.09, 4648.12, 3150.23, 1979.96,
+                516.03, 1651.81, 2359.80, 3632.77, 2108.98, 1331.98, 593.19, 715.92, 1813.66, 2735.32,
+                2496.67, 765.09
+            ];
+            
+            // --- Auto-Calculations ---
+            const spendings = earnings.map((earning, i) => earning - profits[i]);
+            const profitMargins = earnings.map((earning, i) => {
+                return earning !== 0 ? (profits[i] / earning) * 100 : 0;
+            });
+
+            // --- Chart Configuration ---
+            const ctx = document.getElementById('comboChart').getContext('2d');
+            const comboChart = new Chart(ctx, {
+                type: 'bar', // Base type is bar
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'line', // This dataset will be a line
+                            label: 'Profit Margin %',
+                            data: profitMargins,
+                            borderColor: '#ffb703', // A vibrant gold/orange
+                            backgroundColor: '#ffb703',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            yAxisID: 'yPercentage', // Assign to the right-side axis
+                            tension: 0.1
+                        },
+                        {
+                            type: 'bar', // This dataset will be a bar
+                            label: 'Profit ($)',
+                            data: profits,
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)', // Green
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            yAxisID: 'yDollars', // Assign to the left-side axis
+                        },
+                        {
+                            type: 'bar', // This dataset will be a bar
+                            label: 'Spendings ($)',
+                            data: spendings,
+                            backgroundColor: 'rgba(148, 163, 184, 0.6)', // Neutral Gray
+                            borderColor: 'rgba(100, 116, 139, 1)',
+                            yAxisID: 'yDollars', // Assign to the left-side axis
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { grid: { display: false } },
+                        yDollars: { // Left Y-Axis for Dollar amounts
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Amount in USD ($)', font: { size: 14, weight: 'bold' } },
+                            ticks: { callback: value => '$' + (value / 1000) + 'k' }
+                        },
+                        yPercentage: { // Right Y-Axis for Percentage
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Profit Margin (%)', font: { size: 14, weight: 'bold' } },
+                            ticks: { callback: value => value.toFixed(1) + '%' },
+                            grid: { drawOnChartArea: false } // Only show grid for left axis
+                        }
+                    },
+                    plugins: {
+                        datalabels: {
+                            // Apply labels ONLY to the line chart (datasetIndex 0)
+                            display: context => context.datasetIndex === 0,
+                            align: 'end',
+                            anchor: 'end',
+                            color: '#2c3e50',
+                            font: { weight: 'bold' },
+                            formatter: value => value.toFixed(1) + '%',
+                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                            borderRadius: 4,
+                            padding: 4
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.dataset.yAxisID === 'yPercentage') {
+                                        label += context.parsed.y.toFixed(2) + '%';
+                                    } else {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
